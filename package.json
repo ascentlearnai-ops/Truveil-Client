@@ -1,0 +1,27 @@
+{
+  "name": "truveil-secure",
+  "version": "1.0.0",
+  "description": "Truveil Secure Interview Client",
+  "main": "main.js",
+  "author": "Truveil Inc.",
+  "build": {
+    "appId": "com.truveil.candidate",
+    "productName": "TruveilSecure",
+    "win": {
+      "target": "portable"
+    }
+  },
+  "scripts": {
+    "start": "electron .",
+    "build:mac": "electron-builder --mac",
+    "build:win": "electron-builder --win"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "ws": "^8.14.2"
+  },
+  "devDependencies": {
+    "electron": "^28.2.0",
+    "electron-builder": "^24.9.1"
+  }
+}

@@ -1,0 +1,16 @@
+appId: com.truveil.secure
+productName: TruveilSecure
+directories:
+  output: dist
+mac:
+  category: public.app-category.business
+  target:
+    - dmg
+win:
+  target:
+    - nsis
+  requestedExecutionLevel: requireAdministrator
+nsis:
+  oneClick: true
+  perMachine: false
+  runAfterFinish: true
