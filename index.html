@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Download Truveil Secure — required for your interview session.">
+  <meta name="robots" content="noindex">
+  <title>Download Truveil Secure</title>
+  <style>
+    :root{
+      --bg:#ffffff;
+      --ink:#0f172a;
+      --muted:#475569;
+      --dim:#64748b;
+      --line:#e2e8f0;
+      --line-soft:#f1f5f9;
+      --surface:#f8fafc;
+      --accent:#2563eb;
+      --accent-hover:#1d4ed8;
+      --accent-soft:#eff6ff;
+      --success:#059669;
+      --radius:12px;
+      --font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+    }
+    *{margin:0;padding:0;box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      font-family:var(--font);
+      color:var(--ink);
+      background:var(--bg);
+      -webkit-font-smoothing:antialiased;
+      line-height:1.55;
+      display:flex;
+      flex-direction:column;
+      min-height:100vh;
+    }
+    a{color:var(--accent);text-decoration:none}
+    a:hover{text-decoration:underline}
+    :focus{outline:none}
+    :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
+
+    header{
+      border-bottom:1px solid var(--line);
+      padding:16px 24px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px;letter-spacing:-0.01em}
+    .brand-mark{
+      width:22px;height:22px;border-radius:6px;
+      background:linear-gradient(135deg,#1e40af,#3b82f6);
+      display:grid;place-items:center;
+      box-shadow:0 1px 2px rgba(15,23,42,.12);
+    }
+    .brand-mark svg{width:12px;height:12px;color:#fff}
+    .pill{
+      font-size:11px;font-weight:600;
+      background:var(--accent-soft);color:var(--accent);
+      padding:5px 10px;border-radius:999px;
+      letter-spacing:.01em;
+    }
+
+    main{
+      flex:1;
+      width:100%;
+      max-width:640px;
+      margin:0 auto;
+      padding:56px 24px 32px;
+    }
+
+    h1{
+      font-size:32px;
+      line-height:1.15;
+      letter-spacing:-0.02em;
+      font-weight:700;
+      margin-bottom:14px;
+    }
+    .lede{
+      font-size:15px;
+      color:var(--muted);
+      margin-bottom:32px;
+      max-width:540px;
+    }
+
+    .card{
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      background:#fff;
+      padding:22px 24px;
+      margin-bottom:16px;
+    }
+    .card-title{
+      font-size:11px;
+      font-weight:700;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      color:var(--dim);
+      margin-bottom:14px;
+    }
+    .feature-list{list-style:none;display:flex;flex-direction:column;gap:12px}
+    .feature-list li{display:flex;gap:12px;font-size:14px;color:var(--ink);line-height:1.5}
+    .feature-list svg{flex-shrink:0;margin-top:2px;color:var(--accent)}
+    .feature-list strong{display:block;font-weight:600;margin-bottom:2px}
+    .feature-list span{color:var(--muted);font-size:13px}
+
+    .download-area{
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      background:linear-gradient(180deg,var(--accent-soft),#fff);
+      padding:28px 24px;
+      text-align:center;
+      margin:24px 0 12px;
+    }
+    .download-area .os-detected{
+      display:inline-flex;align-items:center;gap:6px;
+      font-size:11px;font-weight:600;
+      background:#fff;border:1px solid var(--line);
+      padding:5px 12px;border-radius:999px;color:var(--muted);
+      margin-bottom:14px;
+    }
+    .download-area .os-detected .dot{
+      width:6px;height:6px;border-radius:50%;background:var(--success);
+    }
+    .btn-download{
+      display:inline-flex;align-items:center;justify-content:center;gap:10px;
+      background:var(--accent);color:#fff;
+      font-family:var(--font);font-size:15px;font-weight:600;
+      padding:14px 28px;border-radius:10px;border:none;cursor:pointer;
+      box-shadow:0 2px 4px rgba(37,99,235,.18),0 8px 24px rgba(37,99,235,.18);
+      transition:transform .15s, box-shadow .15s, background .15s;
+      width:100%;max-width:360px;
+    }
+    .btn-download:hover{
+      background:var(--accent-hover);
+      transform:translateY(-1px);
+      box-shadow:0 4px 8px rgba(37,99,235,.22),0 12px 32px rgba(37,99,235,.22);
+      text-decoration:none;
+    }
+    .btn-download:active{transform:translateY(0)}
+    .btn-download svg{width:18px;height:18px}
+    .download-sub{
+      display:block;margin-top:10px;font-size:12px;color:var(--dim);
+    }
+    .alt-download{
+      margin-top:14px;font-size:12px;color:var(--dim);
+    }
+    .alt-download a{color:var(--muted);margin:0 6px;font-weight:500}
+
+    .privacy-note{
+      font-size:12px;color:var(--dim);
+      background:var(--surface);
+      border:1px solid var(--line-soft);
+      border-radius:8px;
+      padding:14px 16px;
+      margin-top:20px;
+      line-height:1.55;
+    }
+    .privacy-note strong{color:var(--ink)}
+
+    footer{
+      border-top:1px solid var(--line);
+      padding:20px 24px;
+      display:flex;justify-content:space-between;align-items:center;
+      font-size:12px;color:var(--dim);
+      flex-wrap:wrap;gap:8px;
+    }
+    footer a{color:var(--dim);margin-left:14px}
+
+    @media(max-width:520px){
+      main{padding:40px 20px 24px}
+      h1{font-size:26px}
+      .lede{font-size:14px}
+      .download-area{padding:22px 18px}
+      .btn-download{font-size:14px;padding:13px 20px}
+      header{padding:14px 18px}
+      footer{padding:16px 20px;flex-direction:column;align-items:flex-start}
+      footer a{margin:0 14px 0 0}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </span>
+      <span>Truveil Secure</span>
+    </div>
+    <span class="pill">Required for your interview</span>
+  </header>
+
+  <main>
+    <h1>Download Truveil Secure</h1>
+    <p class="lede">
+      Truveil Secure is required by your interviewer to verify interview integrity. Installation takes under 2 minutes. No account needed.
+    </p>
+
+    <div class="download-area">
+      <div class="os-detected" id="osDetected">
+        <span class="dot"></span>
+        <span id="osLabel">Detecting your system…</span>
+      </div>
+      <a href="#" class="btn-download" id="downloadBtn" download>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+        <span id="downloadLabel">Download</span>
+      </a>
+      <span class="download-sub">Installation takes under 2 minutes · No account needed</span>
+      <div class="alt-download">
+        Other platforms:
+        <a href="#" data-os="mac">macOS</a> ·
+        <a href="#" data-os="win">Windows</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">What this app does</div>
+      <ul class="feature-list">
+        <li>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+          <div><strong>Records your microphone</strong><span>Generates a live transcript of your responses for your interviewer.</span></div>
+        </li>
+        <li>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          <div><strong>Uses your camera</strong><span>Verifies your attention and presence during the session.</span></div>
+        </li>
+        <li>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
+          <div><strong>Monitors browser activity</strong><span>Flags browser tabs and applications opened during the interview.</span></div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="privacy-note">
+      <strong>Your privacy.</strong> Audio and video are used only for this interview session. Recordings are deleted within 24 hours. Transcripts and session reports are retained for 30 days, then permanently deleted.
+    </div>
+  </main>
+
+  <footer>
+    <div>© 2026 Truveil Inc.</div>
+    <div>
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
+      <a href="https://truveil.com">truveil.com</a>
+    </div>
+  </footer>
+
+  <script>
+    (function(){
+      var MAC_URL = 'https://github.com/ascentlearnai-ops/Truveil-Client/releases/latest/download/TruveilSecure.dmg';
+      var WIN_URL = 'https://github.com/ascentlearnai-ops/Truveil-Client/releases/latest/download/TruveilSecure-Setup.exe';
+
+      var ua = navigator.userAgent || '';
+      var platform = navigator.platform || '';
+      var isMac = /Mac|iPhone|iPad|iPod/i.test(platform) || /Mac OS X/i.test(ua);
+      var isWin = /Win/i.test(platform) || /Windows/i.test(ua);
+
+      var osLabel = document.getElementById('osLabel');
+      var btn = document.getElementById('downloadBtn');
+      var btnLabel = document.getElementById('downloadLabel');
+
+      if (isMac) {
+        osLabel.textContent = 'macOS detected';
+        btn.href = MAC_URL;
+        btnLabel.textContent = 'Download for Mac (.dmg)';
+      } else if (isWin) {
+        osLabel.textContent = 'Windows detected';
+        btn.href = WIN_URL;
+        btnLabel.textContent = 'Download for Windows (.exe)';
+      } else {
+        osLabel.textContent = 'Choose your platform';
+        btn.href = WIN_URL;
+        btnLabel.textContent = 'Download for Windows (.exe)';
+      }
+
+      document.querySelectorAll('[data-os]').forEach(function(a){
+        a.addEventListener('click', function(e){
+          e.preventDefault();
+          var os = a.getAttribute('data-os');
+          window.location.href = os === 'mac' ? MAC_URL : WIN_URL;
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

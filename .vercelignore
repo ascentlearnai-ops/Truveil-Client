@@ -1,0 +1,10 @@
+main.js
+preload.js
+electron-builder.yml
+run.bat
+src/
+build.log
+dist/
+node_modules/
+.env
+.env.example
