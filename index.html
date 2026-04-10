@@ -28,6 +28,28 @@
     @keyframes glow{0%,100%{opacity:.3}50%{opacity:.6}}
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
     @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+    @keyframes orbFloat1{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(60px,-40px) scale(1.1)}66%{transform:translate(-30px,30px) scale(.95)}}
+    @keyframes orbFloat2{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(-50px,50px) scale(1.08)}66%{transform:translate(40px,-20px) scale(.92)}}
+    @keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+    @keyframes particleDrift{0%{transform:translateY(0) translateX(0);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateY(-100vh) translateX(40px);opacity:0}}
+
+    /* Ambient orbs */
+    .orb{position:fixed;border-radius:50%;pointer-events:none;filter:blur(100px);z-index:0;will-change:transform}
+    .orb-1{width:600px;height:600px;background:radial-gradient(circle,rgba(59,130,246,.08) 0%,transparent 70%);top:-10%;left:-10%;animation:orbFloat1 20s ease-in-out infinite}
+    .orb-2{width:500px;height:500px;background:radial-gradient(circle,rgba(167,139,250,.06) 0%,transparent 70%);top:30%;right:-15%;animation:orbFloat2 25s ease-in-out infinite}
+
+    /* Noise overlay */
+    .noise-overlay{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;opacity:.035;mix-blend-mode:overlay}
+
+    /* Particles */
+    .particles{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;overflow:hidden}
+    .particle{position:absolute;width:2px;height:2px;background:rgba(59,130,246,.4);border-radius:50%;animation:particleDrift linear infinite}
+
+    /* Cursor glow */
+    .cursor-glow{position:fixed;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(59,130,246,.06) 0%,transparent 70%);pointer-events:none;z-index:0;transform:translate(-50%,-50%);transition:left .15s ease-out,top .15s ease-out,opacity .3s;opacity:0;will-change:left,top}
+    .cursor-glow.active{opacity:1}
+
+    nav,main,footer{position:relative;z-index:2}
 
     .fade-up{opacity:0;transform:translateY(24px);animation:fadeUp .8s cubic-bezier(.16,1,.3,1) forwards}
     .d1{animation-delay:.05s}.d2{animation-delay:.12s}.d3{animation-delay:.2s}.d4{animation-delay:.3s}.d5{animation-delay:.4s}
@@ -47,16 +69,19 @@
     .shield-icon svg{width:30px;height:30px;color:var(--accent-soft)}
 
     h1{font-size:clamp(36px,5vw,56px);font-weight:900;letter-spacing:-2.5px;line-height:.93;margin-bottom:16px}
-    h1 .dim{color:rgba(255,255,255,.3)}
+    h1 .dim{background:linear-gradient(135deg,var(--accent-soft),#a78bfa,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-size:200% auto;animation:shimmer 4s linear infinite}
     .sub{font-size:16px;color:var(--text-muted);max-width:440px;margin:0 auto 40px;line-height:1.65;font-weight:350}
 
     /* Download Card */
-    .dl-card{background:rgba(10,10,16,.9);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);border:1px solid rgba(255,255,255,.1);border-radius:var(--radius);box-shadow:0 0 0 1px rgba(255,255,255,.04),0 4px 16px rgba(0,0,0,.3),0 24px 80px rgba(0,0,0,.5),0 0 100px rgba(59,130,246,.05);padding:32px;max-width:480px;width:100%;text-align:center;position:relative;overflow:hidden}
-    .dl-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(59,130,246,.5),transparent)}
+    .dl-card{background:rgba(10,10,16,.7);backdrop-filter:blur(40px) saturate(1.4);-webkit-backdrop-filter:blur(40px) saturate(1.4);border:1px solid rgba(255,255,255,.08);border-radius:var(--radius);box-shadow:0 0 0 1px rgba(255,255,255,.04),0 4px 16px rgba(0,0,0,.3),0 24px 80px rgba(0,0,0,.5),0 0 100px rgba(59,130,246,.06);padding:32px;max-width:480px;width:100%;text-align:center;position:relative;overflow:hidden}
+    .dl-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(59,130,246,.6),transparent)}
+    .dl-card::after{content:'';position:absolute;inset:0;border-radius:inherit;padding:1px;background:linear-gradient(135deg,rgba(255,255,255,.1),transparent 40%,transparent 60%,rgba(59,130,246,.08));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
     .os-detect{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;background:rgba(255,255,255,.04);border:1px solid var(--border);padding:5px 14px;border-radius:999px;color:var(--text-muted);margin-bottom:20px}
     .os-detect .dot{width:6px;height:6px;border-radius:50%;background:var(--success)}
-    .btn-download{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:15px 24px;background:var(--accent);color:#fff;font-family:var(--font);font-size:15px;font-weight:600;border-radius:10px;border:none;cursor:pointer;box-shadow:0 4px 16px var(--accent-glow),0 0 0 1px rgba(59,130,246,.3);transition:all .2s;letter-spacing:-.01em}
-    .btn-download:hover{filter:brightness(1.12);transform:translateY(-2px);box-shadow:0 8px 32px var(--accent-glow),0 0 0 1px rgba(59,130,246,.4)}
+    .btn-download{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:15px 24px;background:linear-gradient(135deg,var(--accent),#6366f1);color:#fff;font-family:var(--font);font-size:15px;font-weight:600;border-radius:10px;border:none;cursor:pointer;box-shadow:0 4px 16px var(--accent-glow),0 0 0 1px rgba(59,130,246,.3);transition:all .25s;letter-spacing:-.01em;position:relative;overflow:hidden}
+    .btn-download::before{content:'';position:absolute;top:0;left:-100%;width:200%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);transition:left .6s}
+    .btn-download:hover::before{left:100%}
+    .btn-download:hover{filter:brightness(1.12);transform:translateY(-2px);box-shadow:0 8px 32px var(--accent-glow),0 0 0 1px rgba(59,130,246,.4),0 0 60px rgba(59,130,246,.15)}
     .btn-download:active{transform:translateY(0)}
     .btn-download svg{width:18px;height:18px}
     .dl-note{display:block;margin-top:12px;font-size:11px;color:var(--text-dim);letter-spacing:.3px}
@@ -66,8 +91,9 @@
 
     /* Feature cards */
     .features{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:640px;width:100%;margin-top:56px}
-    .feat-card{background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--radius);padding:24px 18px;text-align:center;transition:border-color .25s,transform .3s}
-    .feat-card:hover{border-color:var(--border-hover);transform:translateY(-3px)}
+    .feat-card{background:rgba(255,255,255,.02);backdrop-filter:blur(20px) saturate(1.3);-webkit-backdrop-filter:blur(20px) saturate(1.3);border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);padding:24px 18px;text-align:center;transition:border-color .4s,transform .4s,box-shadow .4s;position:relative;overflow:hidden}
+    .feat-card::before{content:'';position:absolute;inset:0;border-radius:inherit;padding:1px;background:linear-gradient(135deg,rgba(255,255,255,.08),transparent 50%,rgba(59,130,246,.05));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+    .feat-card:hover{border-color:rgba(59,130,246,.18);transform:translateY(-4px);box-shadow:0 8px 32px rgba(59,130,246,.06)}
     .feat-card svg{color:var(--accent-soft);margin-bottom:14px;filter:drop-shadow(0 0 12px rgba(59,130,246,.2))}
     .feat-card h3{font-size:13px;font-weight:600;margin-bottom:5px;color:#fff}
     .feat-card p{font-size:11.5px;color:var(--text-muted);line-height:1.5}
@@ -111,6 +137,14 @@
   </style>
 </head>
 <body>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="particles" id="particles"></div>
+  <div class="cursor-glow" id="cursorGlow"></div>
+  <svg class="noise-overlay" xmlns="http://www.w3.org/2000/svg">
+    <filter id="noiseFilter"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch"/></filter>
+    <rect width="100%" height="100%" filter="url(#noiseFilter)"/>
+  </svg>
   <nav>
     <div class="nav-logo">Truveil</div>
     <span class="nav-badge">Required for your interview</span>
@@ -201,6 +235,31 @@
   </footer>
 
   <script>
+    // Particles
+    (function(){
+      var c=document.getElementById('particles');
+      for(var i=0;i<24;i++){
+        var p=document.createElement('div');
+        p.className='particle';
+        p.style.left=Math.random()*100+'%';
+        p.style.top=Math.random()*100+'%';
+        var s=(1+Math.random()*2);
+        p.style.width=s+'px';p.style.height=s+'px';
+        p.style.animationDuration=(12+Math.random()*18)+'s';
+        p.style.animationDelay=(Math.random()*10)+'s';
+        p.style.opacity=(.15+Math.random()*.35);
+        c.appendChild(p);
+      }
+    })();
+    // Cursor glow
+    (function(){
+      var g=document.getElementById('cursorGlow'),active=false;
+      document.addEventListener('mousemove',function(e){
+        if(!active){g.classList.add('active');active=true;}
+        g.style.left=e.clientX+'px';g.style.top=e.clientY+'px';
+      });
+      document.addEventListener('mouseleave',function(){g.classList.remove('active');active=false;});
+    })();
     (function(){
       var MAC_URL='https://github.com/ascentlearnai-ops/Truveil-Client/releases/latest/download/TruveilSecure.dmg';
       var WIN_URL='https://github.com/ascentlearnai-ops/Truveil-Client/releases/latest/download/TruveilSecure-Setup.exe';
