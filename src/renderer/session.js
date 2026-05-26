@@ -17,8 +17,17 @@ let timerInterval = null;
 let integrity = 100;
 let audioStream = null;
 let sessionEnding = false;
-let recognition = null;
-let recognitionShouldRun = false;
+let mediaRecorder = null;
+let audioContext = null;
+let analyser = null;
+let audioLevelTimer = null;
+let chunkSequence = 0;
+let uploadedChunks = 0;
+let failedChunks = 0;
+let pendingUploads = 0;
+let lastChunkAt = 0;
+let lastRms = 0;
+let lastPeak = 0;
 
 const statusPill = $('statusPill');
 const statusText = $('statusText');
@@ -26,6 +35,12 @@ const toastEl = $('toast');
 const startBtn = $('startBtn');
 const sessionCodeInput = $('sessionCodeInput');
 const sessionConsentInput = $('sessionConsentInput');
+const micLevelFill = $('micLevelFill');
+const micLevelLabel = $('micLevelLabel');
+const uploadStatusEl = $('uploadStatus');
+const audioStateEl = $('audioState');
+const audioChunkCountEl = $('audioChunkCount');
+const waveformEl = $('micWaveform');
 
 function setStatus(kind, text) {
   statusPill.classList.remove('active', 'warn');
@@ -122,7 +137,7 @@ async function startSession() {
   sessionStart = Date.now();
   sessionEnding = false;
   startTimer();
-  startSpeechRecognition();
+  startAudioStreaming();
   showScreen('active');
   resetStartButton();
 }
@@ -139,56 +154,169 @@ function stopAudio() {
   }
 }
 
-function startSpeechRecognition() {
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) {
-    logEvent('Speech recognition is not available in this runtime', 'warn');
-    toast('Speech recognition is unavailable, but focus monitoring is active.', 'warn');
-    return;
-  }
+function getSupportedMimeType() {
+  const options = [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/ogg;codecs=opus',
+    'audio/ogg'
+  ];
+  return options.find(type => MediaRecorder.isTypeSupported(type)) || '';
+}
 
-  recognition = new SR();
-  recognition.continuous = true;
-  recognition.interimResults = false;
-  recognition.lang = 'en-US';
-  recognitionShouldRun = true;
-
-  recognition.onresult = (event) => {
-    for (let i = event.resultIndex; i < event.results.length; i++) {
-      const result = event.results[i];
-      if (!result.isFinal) continue;
-      const text = result[0]?.transcript?.trim();
-      if (text) {
-        window.truveil.sendTranscript({ text, timestamp: Date.now() });
-      }
-    }
-  };
-
-  recognition.onerror = (event) => {
-    if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-      recognitionShouldRun = false;
-      logEvent('Speech transcription permission was blocked', 'warn');
-    }
-  };
-
-  recognition.onend = () => {
-    if (!recognitionShouldRun || sessionEnding) return;
-    setTimeout(() => {
-      try { recognition.start(); } catch {}
-    }, 250);
-  };
-
-  try {
-    recognition.start();
-  } catch {
-    logEvent('Speech transcription could not start', 'warn');
+function ensureWaveformBars() {
+  if (!waveformEl || waveformEl.children.length) return;
+  for (let i = 0; i < 32; i++) {
+    const bar = document.createElement('span');
+    bar.style.setProperty('--h', `${18 + (i % 6) * 7}%`);
+    waveformEl.appendChild(bar);
   }
 }
 
-function stopSpeechRecognition() {
-  recognitionShouldRun = false;
-  try { recognition?.stop(); } catch {}
-  recognition = null;
+function updateAudioUi({ rms = lastRms, peak = lastPeak, status } = {}) {
+  const level = Math.max(0, Math.min(1, rms * 4));
+  if (micLevelFill) micLevelFill.style.width = `${Math.round(level * 100)}%`;
+  if (micLevelLabel) micLevelLabel.textContent = `${Math.round(level * 100)}%`;
+  if (audioStateEl) audioStateEl.textContent = status || (pendingUploads ? 'Uploading' : 'Streaming');
+  if (audioChunkCountEl) audioChunkCountEl.textContent = String(uploadedChunks);
+  if (uploadStatusEl) {
+    uploadStatusEl.textContent = failedChunks
+      ? `${failedChunks} upload retry needed`
+      : pendingUploads
+        ? `${pendingUploads} chunk${pendingUploads === 1 ? '' : 's'} uploading`
+        : 'Audio relay healthy';
+    uploadStatusEl.className = failedChunks ? 'audio-status error' : pendingUploads ? 'audio-status busy' : 'audio-status ok';
+  }
+  if (waveformEl) {
+    Array.from(waveformEl.children).forEach((bar, index) => {
+      const pulse = Math.max(.12, Math.min(1, level + (peak * .35) + Math.sin(Date.now() / 180 + index) * .12));
+      bar.style.transform = `scaleY(${pulse})`;
+      bar.style.opacity = String(.35 + pulse * .55);
+    });
+  }
+}
+
+function startAudioMeter() {
+  ensureWaveformBars();
+  audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  const source = audioContext.createMediaStreamSource(audioStream);
+  analyser = audioContext.createAnalyser();
+  analyser.fftSize = 1024;
+  source.connect(analyser);
+
+  const samples = new Uint8Array(analyser.fftSize);
+  let lastSentAt = 0;
+  audioLevelTimer = setInterval(() => {
+    if (!analyser || sessionEnding) return;
+    analyser.getByteTimeDomainData(samples);
+    let sum = 0;
+    let peak = 0;
+    for (const value of samples) {
+      const centered = (value - 128) / 128;
+      sum += centered * centered;
+      peak = Math.max(peak, Math.abs(centered));
+    }
+    lastRms = Math.sqrt(sum / samples.length);
+    lastPeak = peak;
+    updateAudioUi({ rms: lastRms, peak: lastPeak });
+
+    if (Date.now() - lastSentAt > 900) {
+      lastSentAt = Date.now();
+      window.truveil.sendAudioLevel({ rms: lastRms, peak: lastPeak, timestamp: Date.now() });
+    }
+  }, 120);
+}
+
+async function uploadRecorderBlob(blob, sequence, startedAt) {
+  const durationMs = Math.max(0, Date.now() - startedAt);
+  pendingUploads++;
+  updateAudioUi({ status: 'Uploading' });
+
+  try {
+    const arrayBuffer = await blob.arrayBuffer();
+    const result = await window.truveil.uploadAudioChunk({
+      arrayBuffer,
+      mimeType: blob.type || mediaRecorder?.mimeType || 'audio/webm;codecs=opus',
+      sequence,
+      durationMs,
+      rms: lastRms,
+      peak: lastPeak,
+      timestamp: Date.now()
+    });
+
+    if (!result?.ok) throw new Error(result?.error || 'Upload failed');
+    if (!result.skipped) uploadedChunks++;
+    updateAudioUi({ status: 'Streaming' });
+  } catch (err) {
+    failedChunks++;
+    logEvent(`Audio upload failed: ${err.message}`, 'warn');
+    toast('Audio upload had a problem. Truveil will keep monitoring and retry on the next chunk.', 'warn');
+    updateAudioUi({ status: 'Upload issue' });
+  } finally {
+    pendingUploads = Math.max(0, pendingUploads - 1);
+    updateAudioUi();
+  }
+}
+
+function startAudioStreaming() {
+  if (!window.MediaRecorder) {
+    toast('This runtime cannot record audio. Update Truveil Secure and try again.', 'error');
+    logEvent('MediaRecorder is unavailable in this app runtime', 'warn');
+    return;
+  }
+
+  chunkSequence = 0;
+  uploadedChunks = 0;
+  failedChunks = 0;
+  pendingUploads = 0;
+  updateAudioUi({ status: 'Starting' });
+  startAudioMeter();
+
+  const mimeType = getSupportedMimeType();
+  mediaRecorder = new MediaRecorder(audioStream, mimeType ? { mimeType } : undefined);
+  lastChunkAt = Date.now();
+
+  mediaRecorder.ondataavailable = (event) => {
+    if (!event.data || event.data.size < 128 || sessionEnding) return;
+    const sequence = chunkSequence++;
+    const startedAt = lastChunkAt || Date.now();
+    lastChunkAt = Date.now();
+    uploadRecorderBlob(event.data, sequence, startedAt);
+  };
+
+  mediaRecorder.onerror = (event) => {
+    const message = event.error?.message || 'MediaRecorder error';
+    logEvent(message, 'warn');
+    toast(message, 'error');
+  };
+
+  mediaRecorder.onstart = () => {
+    logEvent('Encrypted mic audio relay started', 'info');
+    updateAudioUi({ status: 'Streaming' });
+  };
+
+  mediaRecorder.onstop = () => {
+    updateAudioUi({ status: 'Stopped' });
+  };
+
+  try {
+    mediaRecorder.start(7000);
+  } catch (err) {
+    logEvent(`Audio recorder could not start: ${err.message}`, 'warn');
+    toast('Audio recording could not start.', 'error');
+  }
+}
+
+function stopAudioStreaming() {
+  try {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+  } catch {}
+  mediaRecorder = null;
+  if (audioLevelTimer) clearInterval(audioLevelTimer);
+  audioLevelTimer = null;
+  try { audioContext?.close(); } catch {}
+  audioContext = null;
+  analyser = null;
 }
 
 function startTimer() {
@@ -229,7 +357,7 @@ async function finishSession(message) {
   if (sessionEnding) return;
   sessionEnding = true;
   clearInterval(timerInterval);
-  stopSpeechRecognition();
+  stopAudioStreaming();
   stopAudio();
   sessionStart = null;
   setStatus(null, 'Complete');

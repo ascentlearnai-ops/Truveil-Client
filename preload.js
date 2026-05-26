@@ -3,6 +3,8 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('truveil', {
   startSession: (data) => ipcRenderer.invoke('session:start', data),
   sendTranscript: (data) => ipcRenderer.invoke('session:transcript', data),
+  uploadAudioChunk: (data) => ipcRenderer.invoke('audio:chunk', data),
+  sendAudioLevel: (data) => ipcRenderer.invoke('audio:level', data),
   endSession: () => ipcRenderer.invoke('session:end'),
   quit: () => ipcRenderer.invoke('app:quit'),
 

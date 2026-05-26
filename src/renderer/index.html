@@ -148,6 +148,23 @@
         </div>
       </div>
 
+      <div class="audio-panel">
+        <div class="audio-panel-head">
+          <div>
+            <div class="stat-label">AUDIO STREAM</div>
+            <div class="audio-state"><span class="s-dot"></span><span id="audioState">Starting</span></div>
+          </div>
+          <div class="audio-chunks"><span id="audioChunkCount">0</span> chunks sent</div>
+        </div>
+        <div class="mic-waveform" id="micWaveform" aria-hidden="true"></div>
+        <div class="mic-level-row">
+          <span>Mic level</span>
+          <div class="mic-level"><i id="micLevelFill"></i></div>
+          <strong id="micLevelLabel">0%</strong>
+        </div>
+        <div class="audio-status ok" id="uploadStatus">Audio relay starting</div>
+      </div>
+
       <div class="flag-feed" id="flagFeed">
         <div class="ff-empty">No events recorded · You're doing everything right</div>
       </div>

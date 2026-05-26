@@ -287,6 +287,109 @@ async function publishCandidateTranscript({ text, timestamp }) {
   }
 }
 
+async function publishCandidateAudioLevel(data = {}) {
+  if (!activeSession || !realtimeChannel) return { ok: false, error: 'No active realtime session.' };
+
+  const payload = {
+    type: 'candidate_audio_level',
+    sessionId: activeSession.sessionCode,
+    candidateName: activeSession.candidateName,
+    rms: Math.max(0, Math.min(1, Number(data.rms) || 0)),
+    peak: Math.max(0, Math.min(1, Number(data.peak) || 0)),
+    timestamp: data.timestamp || Date.now()
+  };
+
+  try {
+    await realtimeChannel.send({ type: 'broadcast', event: 'candidate_audio_level', payload });
+    return { ok: true };
+  } catch (err) {
+    console.warn('[Truveil] audio level publish failed:', err.message);
+    return { ok: false, error: err.message };
+  }
+}
+
+async function uploadCandidateAudioChunk(data = {}) {
+  if (!activeSession || !realtimeChannel) return { ok: false, error: 'No active realtime session.' };
+
+  const client = getSupabase();
+  if (!client) return { ok: false, error: 'Supabase audio storage is not configured.' };
+
+  const rawAudio = data.arrayBuffer;
+  if (!rawAudio) return { ok: false, error: 'Audio chunk was empty.' };
+
+  let buffer;
+  if (Buffer.isBuffer(rawAudio)) {
+    buffer = rawAudio;
+  } else if (rawAudio instanceof ArrayBuffer) {
+    buffer = Buffer.from(rawAudio);
+  } else if (ArrayBuffer.isView(rawAudio)) {
+    buffer = Buffer.from(rawAudio.buffer, rawAudio.byteOffset, rawAudio.byteLength);
+  } else {
+    return { ok: false, error: 'Unsupported audio chunk payload.' };
+  }
+  if (buffer.byteLength < 128) return { ok: true, skipped: true };
+
+  const sequence = Math.max(0, Number(data.sequence) || 0);
+  const timestamp = data.timestamp || Date.now();
+  const mimeType = String(data.mimeType || 'audio/webm;codecs=opus');
+  const storageContentType = mimeType.split(';')[0] || 'audio/webm';
+  const extension = mimeType.includes('ogg') ? 'ogg' : mimeType.includes('wav') ? 'wav' : 'webm';
+  const chunkId = `${activeSession.sessionCode}-${String(sequence).padStart(5, '0')}-${timestamp}`;
+  const storagePath = `${activeSession.sessionCode}/${String(sequence).padStart(5, '0')}-${timestamp}.${extension}`;
+  const durationMs = Math.max(0, Math.round(Number(data.durationMs) || 0));
+  const peak = Math.max(0, Math.min(1, Number(data.peak) || 0));
+  const rms = Math.max(0, Math.min(1, Number(data.rms) || 0));
+
+  try {
+    const upload = await client.storage
+      .from('session-audio')
+      .upload(storagePath, buffer, {
+        contentType: storageContentType,
+        upsert: false
+      });
+
+    if (upload.error) throw new Error(upload.error.message);
+
+    const row = {
+      id: chunkId,
+      session_id: activeSession.sessionCode,
+      storage_path: storagePath,
+      sequence,
+      duration_ms: durationMs,
+      mime_type: mimeType,
+      size_bytes: buffer.byteLength,
+      peak,
+      rms,
+      status: 'uploaded'
+    };
+
+    const insert = await client.from('audio_chunks').insert(row);
+    if (insert.error) console.warn('[Truveil] audio metadata insert failed:', insert.error.message);
+
+    const payload = {
+      type: 'candidate_audio_chunk',
+      sessionId: activeSession.sessionCode,
+      candidateName: activeSession.candidateName,
+      chunkId,
+      storagePath,
+      sequence,
+      durationMs,
+      mimeType,
+      sizeBytes: buffer.byteLength,
+      peak,
+      rms,
+      timestamp
+    };
+
+    await realtimeChannel.send({ type: 'broadcast', event: 'candidate_audio_chunk', payload });
+    return { ok: true, chunkId, storagePath, sizeBytes: buffer.byteLength };
+  } catch (err) {
+    console.warn('[Truveil] audio chunk upload failed:', err.message);
+    await publishCandidateEvent('audio_upload_failed', { severity: 'medium', sequence, error: err.message });
+    return { ok: false, error: err.message };
+  }
+}
+
 async function updateSessionStatus(status, patch = {}) {
   if (!activeSession) return;
   try {
@@ -531,6 +634,10 @@ ipcMain.handle('session:start', async (_, { sessionCode, candidateName }) => {
 });
 
 ipcMain.handle('session:transcript', async (_, data) => publishCandidateTranscript(data || {}));
+
+ipcMain.handle('audio:chunk', async (_, data) => uploadCandidateAudioChunk(data || {}));
+
+ipcMain.handle('audio:level', async (_, data) => publishCandidateAudioLevel(data || {}));
 
 ipcMain.handle('session:end', async () => endSession());
 
