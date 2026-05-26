@@ -30,6 +30,19 @@ body {
   user-select: none;
   position: relative;
 }
+body::before {
+  content: '';
+  position: fixed;
+  inset: 44px 0 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px);
+  background-size: 46px 46px;
+  mask-image: radial-gradient(ellipse 72% 58% at 50% 30%, #000 8%, transparent 72%);
+  -webkit-mask-image: radial-gradient(ellipse 72% 58% at 50% 30%, #000 8%, transparent 72%);
+}
 button { font-family: inherit; cursor: pointer; }
 input { font-family: inherit; }
 
@@ -377,6 +390,24 @@ h2 { font-size: 28px; }
   background: var(--accent); box-shadow: 0 0 8px var(--accent);
   animation: pulse 2s infinite;
 }
+.privacy-rail {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.privacy-rail span {
+  padding: 9px 8px;
+  border: 1px solid rgba(34,197,94,.14);
+  border-radius: 8px;
+  background: rgba(34,197,94,.045);
+  color: #86efac;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .8px;
+  text-transform: uppercase;
+  text-align: center;
+}
 
 .audio-panel {
   text-align: left;
@@ -468,6 +499,76 @@ h2 { font-size: 28px; }
 .audio-status.ok { background: rgba(34,197,94,.08); color: #86efac; }
 .audio-status.busy { background: rgba(96,165,250,.09); color: #bfdbfe; }
 .audio-status.error { background: rgba(245,158,11,.09); color: #fcd34d; }
+
+.session-cockpit {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: -8px 0 18px;
+}
+.session-cockpit div {
+  padding: 11px 10px;
+  border: 1px solid rgba(255,255,255,.065);
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(255,255,255,.032), rgba(255,255,255,.012));
+  text-align: left;
+}
+.session-cockpit span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--text-dim);
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: .85px;
+  text-transform: uppercase;
+}
+.session-cockpit strong {
+  display: block;
+  color: rgba(255,255,255,.78);
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+/* Premium finish pass */
+.glass-card {
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(34,197,94,.08), transparent 42%),
+    rgba(10,10,16,.66);
+}
+.glass-card::before {
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.14), transparent 38%, rgba(34,197,94,.12)),
+    radial-gradient(circle at 50% 0%, rgba(96,165,250,.1), transparent 48%);
+}
+.ci,
+.stat,
+.audio-panel,
+.flag-feed,
+.policy-summary,
+.session-cockpit div {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.026);
+}
+.ci:hover,
+.stat:hover,
+.session-cockpit div:hover {
+  border-color: rgba(34,197,94,.2);
+  background: rgba(34,197,94,.035);
+}
+.shield-area::after {
+  content: '';
+  position: absolute;
+  width: 220px;
+  height: 1px;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, transparent, rgba(34,197,94,.24), rgba(96,165,250,.18), transparent);
+}
+.mic-waveform {
+  border-top: 1px solid rgba(255,255,255,.04);
+  border-bottom: 1px solid rgba(255,255,255,.04);
+}
 
 .flag-feed {
   max-height: 140px; overflow-y: auto;
@@ -585,4 +686,6 @@ h2 { font-size: 28px; }
   h1 { font-size: 28px; }
   h2 { font-size: 22px; }
   .stats-row { grid-template-columns: 1fr; }
+  .privacy-rail,
+  .session-cockpit { grid-template-columns: 1fr; }
 }
