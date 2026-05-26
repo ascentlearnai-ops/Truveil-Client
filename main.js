@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, globalShortcut, powerSaveBlocker, screen } 
 const path = require('path');
 const { execFile } = require('child_process');
 const { createClient } = require('@supabase/supabase-js');
+const WebSocket = require('ws');
 const runtimeConfig = require('./src/config/runtime-config.json');
 
 let mainWindow;
@@ -105,7 +106,10 @@ function getSupabase() {
 
   supabase = createClient(supabaseUrl, supabaseAnonKey, {
     auth: { persistSession: false, autoRefreshToken: false },
-    realtime: { params: { eventsPerSecond: 10 } }
+    realtime: {
+      transport: WebSocket,
+      params: { eventsPerSecond: 10 }
+    }
   });
   return supabase;
 }
