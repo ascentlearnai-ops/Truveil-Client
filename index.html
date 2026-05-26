@@ -261,19 +261,26 @@
       document.addEventListener('mouseleave',function(){g.classList.remove('active');active=false;});
     })();
     (function(){
-      var MAC_URL='https://github.com/ascentlearnai-ops/Truveil-Client/releases/latest/download/TruveilSecure.dmg';
-      var WIN_URL='https://github.com/ascentlearnai-ops/Truveil-Client/releases/latest/download/TruveilSecure-Setup.exe';
+      var MAC_URL='#';
+      var WIN_URL='/downloads/TruveilSecure-Setup-1.0.0.exe';
       var ua=navigator.userAgent||'',platform=navigator.platform||'';
       var isMac=/Mac|iPhone|iPad|iPod/i.test(platform)||/Mac OS X/i.test(ua);
       var isWin=/Win/i.test(platform)||/Windows/i.test(ua);
       var osLabel=document.getElementById('osLabel');
       var btn=document.getElementById('downloadBtn');
       var btnLabel=document.getElementById('downloadLabel');
-      if(isMac){osLabel.textContent='macOS detected';btn.href=MAC_URL;btnLabel.textContent='Download for Mac (.dmg)';}
+      if(isMac){osLabel.textContent='macOS coming soon';btn.href=WIN_URL;btnLabel.textContent='Download for Windows (.exe)';}
       else if(isWin){osLabel.textContent='Windows detected';btn.href=WIN_URL;btnLabel.textContent='Download for Windows (.exe)';}
       else{osLabel.textContent='Select your platform below';btn.href=WIN_URL;btnLabel.textContent='Download for Windows (.exe)';}
       document.querySelectorAll('[data-os]').forEach(function(a){
-        a.addEventListener('click',function(e){e.preventDefault();window.location.href=a.getAttribute('data-os')==='mac'?MAC_URL:WIN_URL;});
+        a.addEventListener('click',function(e){
+          e.preventDefault();
+          if (a.getAttribute('data-os') === 'mac') {
+            alert('macOS version is coming soon. Please use the Windows installer for now.');
+            return;
+          }
+          window.location.href = WIN_URL;
+        });
       });
     })();
   </script>
