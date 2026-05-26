@@ -15,6 +15,23 @@ let pendingInviteCode = null;
 let policyScanInterval = null;
 let lastBlockingKey = null;
 
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function runWithRetry(operation, { attempts = 3, baseDelayMs = 650 } = {}) {
+  let lastError;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      return await operation(attempt);
+    } catch (err) {
+      lastError = err;
+      if (attempt < attempts) await delay(baseDelayMs * attempt);
+    }
+  }
+  throw lastError;
+}
+
 const DEFAULT_POLICY = {
   allowed_apps: ['TruveilSecure', 'Zoom', 'Microsoft Teams', 'Google Chrome', 'Microsoft Edge'],
   allowed_sites: ['meet.google.com', 'zoom.us', 'teams.microsoft.com'],
@@ -341,14 +358,17 @@ async function uploadCandidateAudioChunk(data = {}) {
   const rms = Math.max(0, Math.min(1, Number(data.rms) || 0));
 
   try {
-    const upload = await client.storage
-      .from('session-audio')
-      .upload(storagePath, buffer, {
-        contentType: storageContentType,
-        upsert: false
-      });
+    await runWithRetry(async () => {
+      const upload = await client.storage
+        .from('session-audio')
+        .upload(storagePath, buffer, {
+          contentType: storageContentType,
+          upsert: false
+        });
 
-    if (upload.error) throw new Error(upload.error.message);
+      if (upload.error) throw new Error(upload.error.message);
+      return upload;
+    });
 
     const row = {
       id: chunkId,
@@ -363,7 +383,7 @@ async function uploadCandidateAudioChunk(data = {}) {
       status: 'uploaded'
     };
 
-    const insert = await client.from('audio_chunks').insert(row);
+    const insert = await client.from('audio_chunks').upsert(row, { onConflict: 'id' });
     if (insert.error) console.warn('[Truveil] audio metadata insert failed:', insert.error.message);
 
     const payload = {
@@ -381,7 +401,9 @@ async function uploadCandidateAudioChunk(data = {}) {
       timestamp
     };
 
-    await realtimeChannel.send({ type: 'broadcast', event: 'candidate_audio_chunk', payload });
+    await runWithRetry(async () => {
+      await realtimeChannel.send({ type: 'broadcast', event: 'candidate_audio_chunk', payload });
+    }, { attempts: 2, baseDelayMs: 500 });
     return { ok: true, chunkId, storagePath, sizeBytes: buffer.byteLength };
   } catch (err) {
     console.warn('[Truveil] audio chunk upload failed:', err.message);

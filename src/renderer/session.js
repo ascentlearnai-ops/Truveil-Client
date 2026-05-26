@@ -28,6 +28,11 @@ let pendingUploads = 0;
 let lastChunkAt = 0;
 let lastRms = 0;
 let lastPeak = 0;
+let audioRetryTimer = null;
+let audioRetryQueue = [];
+
+const MAX_AUDIO_RETRY_ITEMS = 12;
+const MAX_AUDIO_RETRY_ATTEMPTS = 4;
 
 const statusPill = $('statusPill');
 const statusText = $('statusText');
@@ -181,7 +186,7 @@ function updateAudioUi({ rms = lastRms, peak = lastPeak, status } = {}) {
   if (audioChunkCountEl) audioChunkCountEl.textContent = String(uploadedChunks);
   if (uploadStatusEl) {
     uploadStatusEl.textContent = failedChunks
-      ? `${failedChunks} upload retry needed`
+      ? `${failedChunks} upload retry${failedChunks === 1 ? '' : 's'} queued`
       : pendingUploads
         ? `${pendingUploads} chunk${pendingUploads === 1 ? '' : 's'} uploading`
         : 'Audio relay healthy';
@@ -194,6 +199,25 @@ function updateAudioUi({ rms = lastRms, peak = lastPeak, status } = {}) {
       bar.style.opacity = String(.35 + pulse * .55);
     });
   }
+}
+
+function queueAudioRetry(blob, sequence, startedAt, attempts = 0) {
+  if (sessionEnding || !blob || attempts >= MAX_AUDIO_RETRY_ATTEMPTS) return;
+  audioRetryQueue.push({ blob, sequence, startedAt, attempts: attempts + 1, queuedAt: Date.now() });
+  if (audioRetryQueue.length > MAX_AUDIO_RETRY_ITEMS) audioRetryQueue = audioRetryQueue.slice(-MAX_AUDIO_RETRY_ITEMS);
+  failedChunks = audioRetryQueue.length;
+  updateAudioUi({ status: 'Retry queued' });
+}
+
+async function processAudioRetryQueue() {
+  if (sessionEnding || !audioRetryQueue.length || pendingUploads > 1) return;
+  const next = audioRetryQueue.shift();
+  failedChunks = audioRetryQueue.length;
+  updateAudioUi({ status: 'Retrying upload' });
+  await uploadRecorderBlob(next.blob, next.sequence, next.startedAt, {
+    fromRetry: true,
+    attempts: next.attempts
+  });
 }
 
 function startAudioMeter() {
@@ -227,7 +251,7 @@ function startAudioMeter() {
   }, 120);
 }
 
-async function uploadRecorderBlob(blob, sequence, startedAt) {
+async function uploadRecorderBlob(blob, sequence, startedAt, options = {}) {
   const durationMs = Math.max(0, Date.now() - startedAt);
   pendingUploads++;
   updateAudioUi({ status: 'Uploading' });
@@ -248,9 +272,13 @@ async function uploadRecorderBlob(blob, sequence, startedAt) {
     if (!result.skipped) uploadedChunks++;
     updateAudioUi({ status: 'Streaming' });
   } catch (err) {
-    failedChunks++;
+    if (!options.fromRetry) {
+      queueAudioRetry(blob, sequence, startedAt);
+    } else {
+      queueAudioRetry(blob, sequence, startedAt, options.attempts);
+    }
     logEvent(`Audio upload failed: ${err.message}`, 'warn');
-    toast('Audio upload had a problem. Truveil will keep monitoring and retry on the next chunk.', 'warn');
+    toast('Audio upload had a problem. Truveil is retrying it in the background.', 'warn');
     updateAudioUi({ status: 'Upload issue' });
   } finally {
     pendingUploads = Math.max(0, pendingUploads - 1);
@@ -269,6 +297,9 @@ function startAudioStreaming() {
   uploadedChunks = 0;
   failedChunks = 0;
   pendingUploads = 0;
+  audioRetryQueue = [];
+  if (audioRetryTimer) clearInterval(audioRetryTimer);
+  audioRetryTimer = setInterval(processAudioRetryQueue, 4500);
   updateAudioUi({ status: 'Starting' });
   startAudioMeter();
 
@@ -314,6 +345,10 @@ function stopAudioStreaming() {
   mediaRecorder = null;
   if (audioLevelTimer) clearInterval(audioLevelTimer);
   audioLevelTimer = null;
+  if (audioRetryTimer) clearInterval(audioRetryTimer);
+  audioRetryTimer = null;
+  audioRetryQueue = [];
+  failedChunks = 0;
   try { audioContext?.close(); } catch {}
   audioContext = null;
   analyser = null;
