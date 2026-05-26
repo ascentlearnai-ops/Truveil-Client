@@ -4,21 +4,17 @@
   "description": "Truveil Secure Interview Client",
   "main": "main.js",
   "author": "Truveil Inc.",
-  "build": {
-    "appId": "com.truveil.candidate",
-    "productName": "TruveilSecure",
-    "win": {
-      "target": "portable"
-    }
-  },
   "scripts": {
+    "prestart": "node scripts/write-runtime-config.js",
     "start": "electron .",
+    "prebuild:mac": "node scripts/write-runtime-config.js --production",
     "build:mac": "electron-builder --mac",
+    "prebuild:win": "node scripts/write-runtime-config.js --production",
     "build:win": "electron-builder --win"
   },
   "dependencies": {
-    "dotenv": "^16.3.1",
-    "ws": "^8.14.2"
+    "@supabase/supabase-js": "^2.106.2",
+    "dotenv": "^16.3.1"
   },
   "devDependencies": {
     "electron": "^28.2.0",

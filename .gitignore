@@ -7,3 +7,5 @@ out/
 *.dll
 .DS_Store
 .env
+!downloads/
+!downloads/TruveilSecure-Setup-1.0.0.exe
