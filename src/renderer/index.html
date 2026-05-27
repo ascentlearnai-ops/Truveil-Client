@@ -55,7 +55,7 @@
       </div>
       <div class="trust-badge"><span class="dot"></span>VERIFIED INTERVIEW ENVIRONMENT</div>
       <h1>Paste your <span class="gradient-text">interview code</span></h1>
-      <p class="sub">Truveil verifies the session, listens for your spoken answers, and sends live transcript text to your interviewer. Raw audio is not stored.</p>
+      <p class="sub">Truveil verifies the session, listens for your spoken answers, and sends live transcript text to your interviewer. If live transcript fails, audio fallback sends short chunks for admin-side transcription.</p>
 
       <div class="code-flow">
         <div><span>1</span><strong>Paste code</strong><small>Use the TRV code from your recruiter.</small></div>
@@ -85,7 +85,7 @@
           <div class="ci-icon">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
           </div>
-          <div class="ci-text"><strong>Microphone</strong><span>Your speech is transcribed live. Raw audio is not stored.</span></div>
+          <div class="ci-text"><strong>Microphone</strong><span>Your speech is transcribed live. If needed, short audio chunks are relayed for admin-side transcription.</span></div>
         </div>
         <div class="ci">
           <div class="ci-icon">
@@ -165,7 +165,7 @@
             <div class="stat-label">TRANSCRIPT STREAM</div>
             <div class="audio-state"><span class="s-dot"></span><span id="audioState">Starting</span></div>
           </div>
-          <div class="audio-chunks"><span id="audioChunkCount">0</span> responses sent</div>
+          <div class="audio-chunks"><span id="audioChunkCount">0</span> signals sent</div>
         </div>
         <div class="mic-waveform" id="micWaveform" aria-hidden="true"></div>
         <div class="mic-level-row">
@@ -179,7 +179,7 @@
       <div class="session-cockpit">
         <div><span>Approved tools</span><strong>Zoom · Meet · Teams</strong></div>
         <div><span>Hard block v1</span><strong>Warn + refocus</strong></div>
-        <div><span>Privacy</span><strong>No stored audio</strong></div>
+        <div><span>Fallback</span><strong>Admin-side audio transcription</strong></div>
       </div>
 
       <div class="flag-feed" id="flagFeed">

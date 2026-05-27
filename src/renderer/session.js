@@ -22,10 +22,17 @@ let analyser = null;
 let audioLevelTimer = null;
 let recognition = null;
 let recognitionRestartTimer = null;
+let mediaRecorder = null;
 let transcriptSequence = 0;
 let transcriptCount = 0;
 let transcriptFailures = 0;
 let transcriptStartedAt = 0;
+let audioFallbackActive = false;
+let audioFallbackSequence = 0;
+let audioFallbackChunks = 0;
+let pendingAudioUploads = 0;
+let lastAudioChunkAt = 0;
+let recognitionNetworkFailures = 0;
 let lastRms = 0;
 let lastPeak = 0;
 
@@ -167,13 +174,21 @@ function updateAudioUi({ rms = lastRms, peak = lastPeak, status } = {}) {
   const level = Math.max(0, Math.min(1, rms * 4));
   if (micLevelFill) micLevelFill.style.width = `${Math.round(level * 100)}%`;
   if (micLevelLabel) micLevelLabel.textContent = `${Math.round(level * 100)}%`;
-  if (audioStateEl) audioStateEl.textContent = status || 'Listening';
-  if (audioChunkCountEl) audioChunkCountEl.textContent = String(transcriptCount);
+  const count = audioFallbackActive ? audioFallbackChunks : transcriptCount;
+  if (audioStateEl) audioStateEl.textContent = status || (audioFallbackActive ? 'Audio fallback' : 'Listening');
+  if (audioChunkCountEl) audioChunkCountEl.textContent = String(count);
   if (uploadStatusEl) {
-    uploadStatusEl.textContent = transcriptFailures
-      ? `${transcriptFailures} transcript send issue${transcriptFailures === 1 ? '' : 's'} detected`
-      : 'Transcript relay healthy - raw audio is not stored';
-    uploadStatusEl.className = transcriptFailures ? 'audio-status error' : 'audio-status ok';
+    if (audioFallbackActive) {
+      uploadStatusEl.textContent = pendingAudioUploads
+        ? `${pendingAudioUploads} audio chunk${pendingAudioUploads === 1 ? '' : 's'} uploading for local admin transcription`
+        : 'Audio fallback active - admin transcribes locally';
+      uploadStatusEl.className = pendingAudioUploads ? 'audio-status busy' : 'audio-status ok';
+    } else {
+      uploadStatusEl.textContent = transcriptFailures
+        ? `${transcriptFailures} transcript send issue${transcriptFailures === 1 ? '' : 's'} detected`
+        : 'Transcript relay healthy';
+      uploadStatusEl.className = transcriptFailures ? 'audio-status error' : 'audio-status ok';
+    }
   }
   if (waveformEl) {
     Array.from(waveformEl.children).forEach((bar, index) => {
@@ -219,6 +234,17 @@ function getSpeechRecognitionCtor() {
   return window.SpeechRecognition || window.webkitSpeechRecognition || null;
 }
 
+function getSupportedAudioMimeType() {
+  if (!window.MediaRecorder) return '';
+  const options = [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/ogg;codecs=opus',
+    'audio/ogg'
+  ];
+  return options.find(type => MediaRecorder.isTypeSupported(type)) || '';
+}
+
 async function sendTranscriptText(text) {
   const cleanText = String(text || '').replace(/\s+/g, ' ').trim();
   if (!cleanText || cleanText.length < 3 || sessionEnding) return;
@@ -248,7 +274,7 @@ async function sendTranscriptText(text) {
 }
 
 function scheduleRecognitionRestart() {
-  if (sessionEnding || !sessionStart) return;
+  if (sessionEnding || !sessionStart || audioFallbackActive) return;
   clearTimeout(recognitionRestartTimer);
   recognitionRestartTimer = setTimeout(() => {
     try {
@@ -258,10 +284,100 @@ function scheduleRecognitionRestart() {
   }, 750);
 }
 
+async function uploadFallbackAudioBlob(blob, sequence, startedAt) {
+  if (!blob || blob.size < 128 || sessionEnding) return;
+  pendingAudioUploads++;
+  updateAudioUi({ status: 'Uploading audio' });
+  try {
+    const arrayBuffer = await blob.arrayBuffer();
+    const result = await window.truveil.uploadAudioChunk({
+      arrayBuffer,
+      mimeType: blob.type || mediaRecorder?.mimeType || 'audio/webm;codecs=opus',
+      sequence,
+      durationMs: Math.max(0, Date.now() - startedAt),
+      rms: lastRms,
+      peak: lastPeak,
+      timestamp: Date.now()
+    });
+    if (!result?.ok) throw new Error(result?.error || 'Audio upload failed');
+    if (!result.skipped) audioFallbackChunks++;
+    updateAudioUi({ status: 'Audio sent' });
+  } catch (err) {
+    logEvent(`Audio fallback upload failed: ${err.message}`, 'warn');
+    toast('Audio fallback upload failed. Check your connection and keep Truveil open.', 'warn');
+    updateAudioUi({ status: 'Audio upload issue' });
+  } finally {
+    pendingAudioUploads = Math.max(0, pendingAudioUploads - 1);
+    updateAudioUi();
+  }
+}
+
+function startAudioFallback(reason = 'speech recognition failed') {
+  if (audioFallbackActive || sessionEnding) return;
+  if (!window.MediaRecorder || !window.truveil.uploadAudioChunk) {
+    logEvent('Audio fallback is unavailable in this build', 'warn');
+    updateAudioUi({ status: 'Transcript unavailable' });
+    return;
+  }
+
+  audioFallbackActive = true;
+  audioFallbackSequence = 0;
+  audioFallbackChunks = 0;
+  pendingAudioUploads = 0;
+  clearTimeout(recognitionRestartTimer);
+  recognitionRestartTimer = null;
+  try {
+    if (recognition) recognition.onend = null;
+    recognition?.stop();
+  } catch {}
+  recognition = null;
+
+  const mimeType = getSupportedAudioMimeType();
+  lastAudioChunkAt = Date.now();
+  try {
+    mediaRecorder = new MediaRecorder(audioStream, mimeType ? { mimeType } : undefined);
+  } catch (err) {
+    audioFallbackActive = false;
+    logEvent(`Audio fallback could not start: ${err.message}`, 'warn');
+    updateAudioUi({ status: 'Fallback failed' });
+    return;
+  }
+
+  mediaRecorder.ondataavailable = (event) => {
+    if (!event.data || sessionEnding) return;
+    const startedAt = lastAudioChunkAt || Date.now();
+    lastAudioChunkAt = Date.now();
+    uploadFallbackAudioBlob(event.data, audioFallbackSequence++, startedAt);
+  };
+  mediaRecorder.onerror = (event) => {
+    const message = event.error?.message || 'Audio fallback recorder error';
+    logEvent(message, 'warn');
+    updateAudioUi({ status: 'Fallback recorder issue' });
+  };
+  mediaRecorder.onstart = () => {
+    logEvent(`Switched to audio fallback: ${reason}`, 'info');
+    toast('Live transcript service failed, so Truveil switched to admin-side audio transcription.', 'warn');
+    updateAudioUi({ status: 'Audio fallback active' });
+  };
+  mediaRecorder.onstop = () => updateAudioUi({ status: 'Stopped' });
+
+  try {
+    mediaRecorder.start(7000);
+  } catch (err) {
+    audioFallbackActive = false;
+    logEvent(`Audio fallback could not start: ${err.message}`, 'warn');
+    updateAudioUi({ status: 'Fallback failed' });
+  }
+}
+
 function startTranscriptStreaming() {
   transcriptSequence = 0;
   transcriptCount = 0;
   transcriptFailures = 0;
+  audioFallbackActive = false;
+  audioFallbackChunks = 0;
+  pendingAudioUploads = 0;
+  recognitionNetworkFailures = 0;
   transcriptStartedAt = Date.now();
   updateAudioUi({ status: 'Starting' });
   startAudioMeter();
@@ -269,8 +385,7 @@ function startTranscriptStreaming() {
   const RecognitionCtor = getSpeechRecognitionCtor();
   if (!RecognitionCtor) {
     logEvent('Live transcript engine is unavailable in this Electron runtime', 'warn');
-    toast('Mic signal is live, but this runtime cannot create transcripts. Install the newest Truveil Secure build.', 'error');
-    updateAudioUi({ status: 'Mic live - transcript unavailable' });
+    startAudioFallback('speech recognition unavailable');
     return;
   }
 
@@ -280,7 +395,7 @@ function startTranscriptStreaming() {
   recognition.lang = 'en-US';
 
   recognition.onstart = () => {
-    logEvent('Live transcript relay started. Raw audio is not stored.', 'info');
+    logEvent('Live transcript relay started.', 'info');
     updateAudioUi({ status: 'Listening' });
   };
 
@@ -300,6 +415,11 @@ function startTranscriptStreaming() {
     const error = event.error || 'speech recognition error';
     const serious = error === 'not-allowed' || error === 'service-not-allowed';
     logEvent(`Transcript engine warning: ${error}`, serious ? 'warn' : 'info');
+    if (error === 'network' || error === 'audio-capture') {
+      recognitionNetworkFailures++;
+      if (recognitionNetworkFailures >= 1) startAudioFallback(error);
+      return;
+    }
     if (serious) {
       toast('Speech transcription permission was blocked. Check microphone permissions and restart the session.', 'error');
       updateAudioUi({ status: 'Transcript blocked' });
@@ -326,6 +446,11 @@ function stopTranscriptStreaming() {
     recognition?.stop();
   } catch {}
   recognition = null;
+  try {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+  } catch {}
+  mediaRecorder = null;
+  audioFallbackActive = false;
   clearTimeout(recognitionRestartTimer);
   recognitionRestartTimer = null;
   if (audioLevelTimer) clearInterval(audioLevelTimer);

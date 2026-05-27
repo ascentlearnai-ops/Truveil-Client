@@ -660,6 +660,8 @@ ipcMain.handle('session:start', async (_, { sessionCode, candidateName }) => {
 
 ipcMain.handle('session:transcript', async (_, data) => publishCandidateTranscript(data || {}));
 
+ipcMain.handle('audio:chunk', async (_, data) => uploadCandidateAudioChunk(data || {}));
+
 ipcMain.handle('audio:level', async (_, data) => publishCandidateAudioLevel(data || {}));
 
 ipcMain.handle('session:end', async () => endSession());
