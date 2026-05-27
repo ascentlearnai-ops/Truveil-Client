@@ -22,6 +22,7 @@ let analyser = null;
 let audioLevelTimer = null;
 let recognition = null;
 let recognitionRestartTimer = null;
+let transcriptWatchdogTimer = null;
 let mediaRecorder = null;
 let transcriptSequence = 0;
 let transcriptCount = 0;
@@ -35,6 +36,8 @@ let lastAudioChunkAt = 0;
 let recognitionNetworkFailures = 0;
 let lastRms = 0;
 let lastPeak = 0;
+let lastSpeechLevelAt = 0;
+let lastFinalTranscriptAt = 0;
 
 const statusPill = $('statusPill');
 const statusText = $('statusText');
@@ -221,6 +224,7 @@ function startAudioMeter() {
     }
     lastRms = Math.sqrt(sum / samples.length);
     lastPeak = peak;
+    if (lastRms > 0.012 || lastPeak > 0.08) lastSpeechLevelAt = Date.now();
     updateAudioUi({ rms: lastRms, peak: lastPeak });
 
     if (Date.now() - lastSentAt > 900) {
@@ -252,6 +256,7 @@ async function sendTranscriptText(text) {
   const durationMs = transcriptStartedAt ? Math.max(0, now - transcriptStartedAt) : undefined;
   const sequence = transcriptSequence++;
   transcriptStartedAt = now;
+  lastFinalTranscriptAt = now;
 
   try {
     const result = await window.truveil.sendTranscript({
@@ -284,10 +289,10 @@ function scheduleRecognitionRestart() {
   }, 750);
 }
 
-async function uploadFallbackAudioBlob(blob, sequence, startedAt) {
+async function uploadFallbackAudioBlob(blob, sequence, startedAt, attempt = 1) {
   if (!blob || blob.size < 128 || sessionEnding) return;
   pendingAudioUploads++;
-  updateAudioUi({ status: 'Uploading audio' });
+  updateAudioUi({ status: attempt > 1 ? `Retrying audio ${attempt}/3` : 'Uploading audio' });
   try {
     const arrayBuffer = await blob.arrayBuffer();
     const result = await window.truveil.uploadAudioChunk({
@@ -304,8 +309,14 @@ async function uploadFallbackAudioBlob(blob, sequence, startedAt) {
     updateAudioUi({ status: 'Audio sent' });
   } catch (err) {
     logEvent(`Audio fallback upload failed: ${err.message}`, 'warn');
-    toast('Audio fallback upload failed. Check your connection and keep Truveil open.', 'warn');
-    updateAudioUi({ status: 'Audio upload issue' });
+    if (attempt < 3 && !sessionEnding) {
+      const retryDelay = 1200 * attempt;
+      setTimeout(() => uploadFallbackAudioBlob(blob, sequence, startedAt, attempt + 1), retryDelay);
+      updateAudioUi({ status: 'Audio retry scheduled' });
+    } else {
+      toast('Audio fallback upload failed. Check your connection and keep Truveil open.', 'warn');
+      updateAudioUi({ status: 'Audio upload issue' });
+    }
   } finally {
     pendingAudioUploads = Math.max(0, pendingAudioUploads - 1);
     updateAudioUi();
@@ -356,18 +367,33 @@ function startAudioFallback(reason = 'speech recognition failed') {
   };
   mediaRecorder.onstart = () => {
     logEvent(`Switched to audio fallback: ${reason}`, 'info');
-    toast('Live transcript service failed, so Truveil switched to admin-side audio transcription.', 'warn');
+    toast('Live transcript service stalled, so Truveil switched to admin-side audio transcription.', 'warn');
     updateAudioUi({ status: 'Audio fallback active' });
   };
   mediaRecorder.onstop = () => updateAudioUi({ status: 'Stopped' });
 
   try {
-    mediaRecorder.start(7000);
+    mediaRecorder.start(5000);
   } catch (err) {
     audioFallbackActive = false;
     logEvent(`Audio fallback could not start: ${err.message}`, 'warn');
     updateAudioUi({ status: 'Fallback failed' });
   }
+}
+
+function startTranscriptWatchdog() {
+  clearInterval(transcriptWatchdogTimer);
+  transcriptWatchdogTimer = setInterval(() => {
+    if (sessionEnding || audioFallbackActive || !sessionStart) return;
+    const now = Date.now();
+    const sessionOldEnough = now - sessionStart > 18000;
+    const heardSpeechRecently = now - lastSpeechLevelAt < 8000;
+    const transcriptStale = !lastFinalTranscriptAt || now - lastFinalTranscriptAt > 22000;
+    if (sessionOldEnough && heardSpeechRecently && transcriptStale) {
+      logEvent('Live transcript stalled; switching to audio fallback.', 'warn');
+      startAudioFallback('transcript watchdog timeout');
+    }
+  }, 5000);
 }
 
 function startTranscriptStreaming() {
@@ -378,9 +404,12 @@ function startTranscriptStreaming() {
   audioFallbackChunks = 0;
   pendingAudioUploads = 0;
   recognitionNetworkFailures = 0;
+  lastSpeechLevelAt = 0;
+  lastFinalTranscriptAt = 0;
   transcriptStartedAt = Date.now();
   updateAudioUi({ status: 'Starting' });
   startAudioMeter();
+  startTranscriptWatchdog();
 
   const RecognitionCtor = getSpeechRecognitionCtor();
   if (!RecognitionCtor) {
@@ -407,7 +436,10 @@ function startTranscriptStreaming() {
       if (event.results[i].isFinal) finalText += text;
       else interimText += text;
     }
-    if (interimText) updateAudioUi({ status: 'Hearing speech' });
+    if (interimText) {
+      lastSpeechLevelAt = Date.now();
+      updateAudioUi({ status: 'Hearing speech' });
+    }
     if (finalText) sendTranscriptText(finalText);
   };
 
@@ -447,12 +479,17 @@ function stopTranscriptStreaming() {
   } catch {}
   recognition = null;
   try {
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      try { mediaRecorder.requestData(); } catch {}
+      mediaRecorder.stop();
+    }
   } catch {}
   mediaRecorder = null;
   audioFallbackActive = false;
   clearTimeout(recognitionRestartTimer);
   recognitionRestartTimer = null;
+  clearInterval(transcriptWatchdogTimer);
+  transcriptWatchdogTimer = null;
   if (audioLevelTimer) clearInterval(audioLevelTimer);
   audioLevelTimer = null;
   try { audioContext?.close(); } catch {}
