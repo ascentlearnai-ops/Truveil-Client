@@ -281,7 +281,7 @@ async function publishCandidateEvent(type, metadata = {}) {
   }
 }
 
-async function publishCandidateTranscript({ text, timestamp }) {
+async function publishCandidateTranscript({ text, timestamp, durationMs, sequence, source }) {
   if (!activeSession || !realtimeChannel) return { ok: false, error: 'No active realtime session.' };
 
   const cleanText = String(text || '').trim();
@@ -292,7 +292,10 @@ async function publishCandidateTranscript({ text, timestamp }) {
     sessionId: activeSession.sessionCode,
     candidateName: activeSession.candidateName,
     text: cleanText,
-    timestamp: timestamp || Date.now()
+    timestamp: timestamp || Date.now(),
+    durationMs: Math.max(0, Math.round(Number(durationMs) || 0)),
+    sequence: Number.isFinite(Number(sequence)) ? Math.max(0, Number(sequence)) : undefined,
+    source: source || 'candidate-transcript'
   };
 
   try {
@@ -656,8 +659,6 @@ ipcMain.handle('session:start', async (_, { sessionCode, candidateName }) => {
 });
 
 ipcMain.handle('session:transcript', async (_, data) => publishCandidateTranscript(data || {}));
-
-ipcMain.handle('audio:chunk', async (_, data) => uploadCandidateAudioChunk(data || {}));
 
 ipcMain.handle('audio:level', async (_, data) => publishCandidateAudioLevel(data || {}));
 

@@ -17,22 +17,17 @@ let timerInterval = null;
 let integrity = 100;
 let audioStream = null;
 let sessionEnding = false;
-let mediaRecorder = null;
 let audioContext = null;
 let analyser = null;
 let audioLevelTimer = null;
-let chunkSequence = 0;
-let uploadedChunks = 0;
-let failedChunks = 0;
-let pendingUploads = 0;
-let lastChunkAt = 0;
+let recognition = null;
+let recognitionRestartTimer = null;
+let transcriptSequence = 0;
+let transcriptCount = 0;
+let transcriptFailures = 0;
+let transcriptStartedAt = 0;
 let lastRms = 0;
 let lastPeak = 0;
-let audioRetryTimer = null;
-let audioRetryQueue = [];
-
-const MAX_AUDIO_RETRY_ITEMS = 12;
-const MAX_AUDIO_RETRY_ATTEMPTS = 4;
 
 const statusPill = $('statusPill');
 const statusText = $('statusText');
@@ -142,7 +137,7 @@ async function startSession() {
   sessionStart = Date.now();
   sessionEnding = false;
   startTimer();
-  startAudioStreaming();
+  startTranscriptStreaming();
   showScreen('active');
   resetStartButton();
 }
@@ -159,16 +154,6 @@ function stopAudio() {
   }
 }
 
-function getSupportedMimeType() {
-  const options = [
-    'audio/webm;codecs=opus',
-    'audio/webm',
-    'audio/ogg;codecs=opus',
-    'audio/ogg'
-  ];
-  return options.find(type => MediaRecorder.isTypeSupported(type)) || '';
-}
-
 function ensureWaveformBars() {
   if (!waveformEl || waveformEl.children.length) return;
   for (let i = 0; i < 32; i++) {
@@ -182,15 +167,13 @@ function updateAudioUi({ rms = lastRms, peak = lastPeak, status } = {}) {
   const level = Math.max(0, Math.min(1, rms * 4));
   if (micLevelFill) micLevelFill.style.width = `${Math.round(level * 100)}%`;
   if (micLevelLabel) micLevelLabel.textContent = `${Math.round(level * 100)}%`;
-  if (audioStateEl) audioStateEl.textContent = status || (pendingUploads ? 'Uploading' : 'Streaming');
-  if (audioChunkCountEl) audioChunkCountEl.textContent = String(uploadedChunks);
+  if (audioStateEl) audioStateEl.textContent = status || 'Listening';
+  if (audioChunkCountEl) audioChunkCountEl.textContent = String(transcriptCount);
   if (uploadStatusEl) {
-    uploadStatusEl.textContent = failedChunks
-      ? `${failedChunks} upload retry${failedChunks === 1 ? '' : 's'} queued`
-      : pendingUploads
-        ? `${pendingUploads} chunk${pendingUploads === 1 ? '' : 's'} uploading`
-        : 'Audio relay healthy';
-    uploadStatusEl.className = failedChunks ? 'audio-status error' : pendingUploads ? 'audio-status busy' : 'audio-status ok';
+    uploadStatusEl.textContent = transcriptFailures
+      ? `${transcriptFailures} transcript send issue${transcriptFailures === 1 ? '' : 's'} detected`
+      : 'Transcript relay healthy - raw audio is not stored';
+    uploadStatusEl.className = transcriptFailures ? 'audio-status error' : 'audio-status ok';
   }
   if (waveformEl) {
     Array.from(waveformEl.children).forEach((bar, index) => {
@@ -199,25 +182,6 @@ function updateAudioUi({ rms = lastRms, peak = lastPeak, status } = {}) {
       bar.style.opacity = String(.35 + pulse * .55);
     });
   }
-}
-
-function queueAudioRetry(blob, sequence, startedAt, attempts = 0) {
-  if (sessionEnding || !blob || attempts >= MAX_AUDIO_RETRY_ATTEMPTS) return;
-  audioRetryQueue.push({ blob, sequence, startedAt, attempts: attempts + 1, queuedAt: Date.now() });
-  if (audioRetryQueue.length > MAX_AUDIO_RETRY_ITEMS) audioRetryQueue = audioRetryQueue.slice(-MAX_AUDIO_RETRY_ITEMS);
-  failedChunks = audioRetryQueue.length;
-  updateAudioUi({ status: 'Retry queued' });
-}
-
-async function processAudioRetryQueue() {
-  if (sessionEnding || !audioRetryQueue.length || pendingUploads > 1) return;
-  const next = audioRetryQueue.shift();
-  failedChunks = audioRetryQueue.length;
-  updateAudioUi({ status: 'Retrying upload' });
-  await uploadRecorderBlob(next.blob, next.sequence, next.startedAt, {
-    fromRetry: true,
-    attempts: next.attempts
-  });
 }
 
 function startAudioMeter() {
@@ -251,104 +215,121 @@ function startAudioMeter() {
   }, 120);
 }
 
-async function uploadRecorderBlob(blob, sequence, startedAt, options = {}) {
-  const durationMs = Math.max(0, Date.now() - startedAt);
-  pendingUploads++;
-  updateAudioUi({ status: 'Uploading' });
+function getSpeechRecognitionCtor() {
+  return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+}
+
+async function sendTranscriptText(text) {
+  const cleanText = String(text || '').replace(/\s+/g, ' ').trim();
+  if (!cleanText || cleanText.length < 3 || sessionEnding) return;
+  const now = Date.now();
+  const durationMs = transcriptStartedAt ? Math.max(0, now - transcriptStartedAt) : undefined;
+  const sequence = transcriptSequence++;
+  transcriptStartedAt = now;
 
   try {
-    const arrayBuffer = await blob.arrayBuffer();
-    const result = await window.truveil.uploadAudioChunk({
-      arrayBuffer,
-      mimeType: blob.type || mediaRecorder?.mimeType || 'audio/webm;codecs=opus',
-      sequence,
+    const result = await window.truveil.sendTranscript({
+      text: cleanText,
+      timestamp: now,
       durationMs,
-      rms: lastRms,
-      peak: lastPeak,
-      timestamp: Date.now()
+      sequence,
+      source: 'candidate-web-speech'
     });
-
-    if (!result?.ok) throw new Error(result?.error || 'Upload failed');
-    if (!result.skipped) uploadedChunks++;
-    updateAudioUi({ status: 'Streaming' });
+    if (!result?.ok) throw new Error(result?.error || 'Transcript send failed');
+    transcriptCount++;
+    transcriptFailures = 0;
+    updateAudioUi({ status: 'Transcript sent' });
   } catch (err) {
-    if (!options.fromRetry) {
-      queueAudioRetry(blob, sequence, startedAt);
-    } else {
-      queueAudioRetry(blob, sequence, startedAt, options.attempts);
-    }
-    logEvent(`Audio upload failed: ${err.message}`, 'warn');
-    toast('Audio upload had a problem. Truveil is retrying it in the background.', 'warn');
-    updateAudioUi({ status: 'Upload issue' });
-  } finally {
-    pendingUploads = Math.max(0, pendingUploads - 1);
-    updateAudioUi();
+    transcriptFailures++;
+    logEvent(`Transcript send failed: ${err.message}`, 'warn');
+    toast('Transcript send had a problem. Keep speaking; Truveil will keep trying.', 'warn');
+    updateAudioUi({ status: 'Send issue' });
   }
 }
 
-function startAudioStreaming() {
-  if (!window.MediaRecorder) {
-    toast('This runtime cannot record audio. Update Truveil Secure and try again.', 'error');
-    logEvent('MediaRecorder is unavailable in this app runtime', 'warn');
-    return;
-  }
+function scheduleRecognitionRestart() {
+  if (sessionEnding || !sessionStart) return;
+  clearTimeout(recognitionRestartTimer);
+  recognitionRestartTimer = setTimeout(() => {
+    try {
+      recognition?.start();
+      updateAudioUi({ status: 'Listening' });
+    } catch {}
+  }, 750);
+}
 
-  chunkSequence = 0;
-  uploadedChunks = 0;
-  failedChunks = 0;
-  pendingUploads = 0;
-  audioRetryQueue = [];
-  if (audioRetryTimer) clearInterval(audioRetryTimer);
-  audioRetryTimer = setInterval(processAudioRetryQueue, 4500);
+function startTranscriptStreaming() {
+  transcriptSequence = 0;
+  transcriptCount = 0;
+  transcriptFailures = 0;
+  transcriptStartedAt = Date.now();
   updateAudioUi({ status: 'Starting' });
   startAudioMeter();
 
-  const mimeType = getSupportedMimeType();
-  mediaRecorder = new MediaRecorder(audioStream, mimeType ? { mimeType } : undefined);
-  lastChunkAt = Date.now();
+  const RecognitionCtor = getSpeechRecognitionCtor();
+  if (!RecognitionCtor) {
+    logEvent('Live transcript engine is unavailable in this Electron runtime', 'warn');
+    toast('Mic signal is live, but this runtime cannot create transcripts. Install the newest Truveil Secure build.', 'error');
+    updateAudioUi({ status: 'Mic live - transcript unavailable' });
+    return;
+  }
 
-  mediaRecorder.ondataavailable = (event) => {
-    if (!event.data || event.data.size < 128 || sessionEnding) return;
-    const sequence = chunkSequence++;
-    const startedAt = lastChunkAt || Date.now();
-    lastChunkAt = Date.now();
-    uploadRecorderBlob(event.data, sequence, startedAt);
+  recognition = new RecognitionCtor();
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.lang = 'en-US';
+
+  recognition.onstart = () => {
+    logEvent('Live transcript relay started. Raw audio is not stored.', 'info');
+    updateAudioUi({ status: 'Listening' });
   };
 
-  mediaRecorder.onerror = (event) => {
-    const message = event.error?.message || 'MediaRecorder error';
-    logEvent(message, 'warn');
-    toast(message, 'error');
+  recognition.onresult = (event) => {
+    let finalText = '';
+    let interimText = '';
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const text = event.results[i][0]?.transcript || '';
+      if (event.results[i].isFinal) finalText += text;
+      else interimText += text;
+    }
+    if (interimText) updateAudioUi({ status: 'Hearing speech' });
+    if (finalText) sendTranscriptText(finalText);
   };
 
-  mediaRecorder.onstart = () => {
-    logEvent('Encrypted mic audio relay started', 'info');
-    updateAudioUi({ status: 'Streaming' });
+  recognition.onerror = (event) => {
+    const error = event.error || 'speech recognition error';
+    const serious = error === 'not-allowed' || error === 'service-not-allowed';
+    logEvent(`Transcript engine warning: ${error}`, serious ? 'warn' : 'info');
+    if (serious) {
+      toast('Speech transcription permission was blocked. Check microphone permissions and restart the session.', 'error');
+      updateAudioUi({ status: 'Transcript blocked' });
+    }
   };
 
-  mediaRecorder.onstop = () => {
-    updateAudioUi({ status: 'Stopped' });
+  recognition.onend = () => {
+    updateAudioUi({ status: sessionEnding ? 'Stopped' : 'Reconnecting' });
+    scheduleRecognitionRestart();
   };
 
   try {
-    mediaRecorder.start(7000);
+    recognition.start();
   } catch (err) {
-    logEvent(`Audio recorder could not start: ${err.message}`, 'warn');
-    toast('Audio recording could not start.', 'error');
+    logEvent(`Transcript engine could not start: ${err.message}`, 'warn');
+    toast('Transcript engine could not start.', 'error');
+    updateAudioUi({ status: 'Transcript issue' });
   }
 }
 
-function stopAudioStreaming() {
+function stopTranscriptStreaming() {
   try {
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+    if (recognition) recognition.onend = null;
+    recognition?.stop();
   } catch {}
-  mediaRecorder = null;
+  recognition = null;
+  clearTimeout(recognitionRestartTimer);
+  recognitionRestartTimer = null;
   if (audioLevelTimer) clearInterval(audioLevelTimer);
   audioLevelTimer = null;
-  if (audioRetryTimer) clearInterval(audioRetryTimer);
-  audioRetryTimer = null;
-  audioRetryQueue = [];
-  failedChunks = 0;
   try { audioContext?.close(); } catch {}
   audioContext = null;
   analyser = null;
@@ -392,7 +373,7 @@ async function finishSession(message) {
   if (sessionEnding) return;
   sessionEnding = true;
   clearInterval(timerInterval);
-  stopAudioStreaming();
+  stopTranscriptStreaming();
   stopAudio();
   sessionStart = null;
   setStatus(null, 'Complete');

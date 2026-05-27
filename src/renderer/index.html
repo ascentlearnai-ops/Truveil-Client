@@ -54,8 +54,14 @@
         </svg>
       </div>
       <div class="trust-badge"><span class="dot"></span>VERIFIED INTERVIEW ENVIRONMENT</div>
-      <h1>Welcome to <span class="gradient-text">Truveil Secure</span></h1>
-      <p class="sub">Enter your session code and name. Your recruiter will see you as "verified" the moment you start.</p>
+      <h1>Paste your <span class="gradient-text">interview code</span></h1>
+      <p class="sub">Truveil verifies the session, listens for your spoken answers, and sends live transcript text to your interviewer. Raw audio is not stored.</p>
+
+      <div class="code-flow">
+        <div><span>1</span><strong>Paste code</strong><small>Use the TRV code from your recruiter.</small></div>
+        <div><span>2</span><strong>Consent</strong><small>Mic transcript and focus checks start after approval.</small></div>
+        <div><span>3</span><strong>Interview</strong><small>Keep this app open during the call.</small></div>
+      </div>
 
       <div class="form">
         <div class="field">
@@ -79,7 +85,7 @@
           <div class="ci-icon">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
           </div>
-          <div class="ci-text"><strong>Microphone</strong><span>Interview audio will be captured for integrity scoring.</span></div>
+          <div class="ci-text"><strong>Microphone</strong><span>Your speech is transcribed live. Raw audio is not stored.</span></div>
         </div>
         <div class="ci">
           <div class="ci-icon">
@@ -103,7 +109,7 @@
         <span class="btn-label">Start Secure Session</span>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" x2="19" y1="12" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
       </button>
-      <p class="fine-print">By starting, you confirm you're ready for your interview and consent to session monitoring.</p>
+      <p class="fine-print">By starting, you confirm you're ready for your interview and consent to transcript and focus monitoring.</p>
     </div>
   </div>
 
@@ -156,10 +162,10 @@
       <div class="audio-panel">
         <div class="audio-panel-head">
           <div>
-            <div class="stat-label">AUDIO STREAM</div>
+            <div class="stat-label">TRANSCRIPT STREAM</div>
             <div class="audio-state"><span class="s-dot"></span><span id="audioState">Starting</span></div>
           </div>
-          <div class="audio-chunks"><span id="audioChunkCount">0</span> chunks sent</div>
+          <div class="audio-chunks"><span id="audioChunkCount">0</span> responses sent</div>
         </div>
         <div class="mic-waveform" id="micWaveform" aria-hidden="true"></div>
         <div class="mic-level-row">
@@ -167,13 +173,13 @@
           <div class="mic-level"><i id="micLevelFill"></i></div>
           <strong id="micLevelLabel">0%</strong>
         </div>
-        <div class="audio-status ok" id="uploadStatus">Audio relay starting</div>
+        <div class="audio-status ok" id="uploadStatus">Transcript relay starting</div>
       </div>
 
       <div class="session-cockpit">
         <div><span>Approved tools</span><strong>Zoom · Meet · Teams</strong></div>
         <div><span>Hard block v1</span><strong>Warn + refocus</strong></div>
-        <div><span>Privacy</span><strong>No screen capture</strong></div>
+        <div><span>Privacy</span><strong>No stored audio</strong></div>
       </div>
 
       <div class="flag-feed" id="flagFeed">
