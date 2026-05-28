@@ -24,6 +24,7 @@ let recognition = null;
 let recognitionRestartTimer = null;
 let transcriptWatchdogTimer = null;
 let mediaRecorder = null;
+let audioFallbackSegmentTimer = null;
 let transcriptSequence = 0;
 let transcriptCount = 0;
 let transcriptFailures = 0;
@@ -343,10 +344,26 @@ function startAudioFallback(reason = 'speech recognition failed') {
   } catch {}
   recognition = null;
 
-  const mimeType = getSupportedAudioMimeType();
   lastAudioChunkAt = Date.now();
+
+  logEvent(`Switched to audio fallback: ${reason}`, 'info');
+  toast('Live transcript service stalled, so Truveil switched to admin-side audio transcription.', 'warn');
+  updateAudioUi({ status: 'Audio fallback active' });
+  startFallbackRecorderSegment();
+}
+
+function startFallbackRecorderSegment() {
+  if (!audioFallbackActive || sessionEnding || !audioStream) return;
+
+  const mimeType = getSupportedAudioMimeType();
+  const sequence = audioFallbackSequence++;
+  const startedAt = Date.now();
+  const parts = [];
+  let recorder;
+
   try {
-    mediaRecorder = new MediaRecorder(audioStream, mimeType ? { mimeType } : undefined);
+    recorder = new MediaRecorder(audioStream, mimeType ? { mimeType } : undefined);
+    mediaRecorder = recorder;
   } catch (err) {
     audioFallbackActive = false;
     logEvent(`Audio fallback could not start: ${err.message}`, 'warn');
@@ -354,26 +371,42 @@ function startAudioFallback(reason = 'speech recognition failed') {
     return;
   }
 
-  mediaRecorder.ondataavailable = (event) => {
-    if (!event.data || sessionEnding) return;
-    const startedAt = lastAudioChunkAt || Date.now();
-    lastAudioChunkAt = Date.now();
-    uploadFallbackAudioBlob(event.data, audioFallbackSequence++, startedAt);
+  recorder.ondataavailable = (event) => {
+    if (event.data && event.data.size > 0) parts.push(event.data);
   };
-  mediaRecorder.onerror = (event) => {
+  recorder.onerror = (event) => {
     const message = event.error?.message || 'Audio fallback recorder error';
     logEvent(message, 'warn');
     updateAudioUi({ status: 'Fallback recorder issue' });
   };
-  mediaRecorder.onstart = () => {
-    logEvent(`Switched to audio fallback: ${reason}`, 'info');
-    toast('Live transcript service stalled, so Truveil switched to admin-side audio transcription.', 'warn');
-    updateAudioUi({ status: 'Audio fallback active' });
+  recorder.onstart = () => {
+    lastAudioChunkAt = startedAt;
+    updateAudioUi({ status: 'Recording audio segment' });
   };
-  mediaRecorder.onstop = () => updateAudioUi({ status: 'Stopped' });
+  recorder.onstop = () => {
+    if (parts.length && !sessionEnding) {
+      const blob = new Blob(parts, { type: recorder.mimeType || mimeType || 'audio/webm;codecs=opus' });
+      uploadFallbackAudioBlob(blob, sequence, startedAt);
+    }
+    if (mediaRecorder === recorder) mediaRecorder = null;
+    if (audioFallbackActive && !sessionEnding) {
+      audioFallbackSegmentTimer = setTimeout(startFallbackRecorderSegment, 250);
+    } else {
+      updateAudioUi({ status: 'Stopped' });
+    }
+  };
 
   try {
-    mediaRecorder.start(5000);
+    recorder.start();
+    clearTimeout(audioFallbackSegmentTimer);
+    audioFallbackSegmentTimer = setTimeout(() => {
+      try {
+        if (recorder.state === 'recording') {
+          recorder.requestData();
+          recorder.stop();
+        }
+      } catch {}
+    }, 5000);
   } catch (err) {
     audioFallbackActive = false;
     logEvent(`Audio fallback could not start: ${err.message}`, 'warn');
@@ -486,6 +519,8 @@ function stopTranscriptStreaming() {
   } catch {}
   mediaRecorder = null;
   audioFallbackActive = false;
+  clearTimeout(audioFallbackSegmentTimer);
+  audioFallbackSegmentTimer = null;
   clearTimeout(recognitionRestartTimer);
   recognitionRestartTimer = null;
   clearInterval(transcriptWatchdogTimer);
