@@ -1,5 +1,8 @@
 // Truveil Secure - Candidate Renderer
 const $ = id => document.getElementById(id);
+const AUDIO_SEGMENT_MS = 12000;
+const TRANSCRIPT_BATCH_MS = 12000;
+const TRANSCRIPT_BATCH_MAX_WORDS = 70;
 
 const screens = {
   setup: $('setup-screen'),
@@ -29,6 +32,9 @@ let transcriptSequence = 0;
 let transcriptCount = 0;
 let transcriptFailures = 0;
 let transcriptStartedAt = 0;
+let transcriptBuffer = [];
+let transcriptBufferStartedAt = 0;
+let transcriptFlushTimer = null;
 let audioFallbackActive = false;
 let audioFallbackSequence = 0;
 let audioFallbackChunks = 0;
@@ -250,14 +256,46 @@ function getSupportedAudioMimeType() {
   return options.find(type => MediaRecorder.isTypeSupported(type)) || '';
 }
 
+function wordCount(text) {
+  return String(text || '').trim().split(/\s+/).filter(Boolean).length;
+}
+
+function scheduleTranscriptFlush(delay = TRANSCRIPT_BATCH_MS) {
+  clearTimeout(transcriptFlushTimer);
+  transcriptFlushTimer = setTimeout(() => {
+    flushTranscriptBuffer().catch((err) => {
+      logEvent(`Transcript flush failed: ${err.message}`, 'warn');
+    });
+  }, delay);
+}
+
 async function sendTranscriptText(text) {
   const cleanText = String(text || '').replace(/\s+/g, ' ').trim();
   if (!cleanText || cleanText.length < 3 || sessionEnding) return;
+  if (!transcriptBufferStartedAt) transcriptBufferStartedAt = Date.now();
+  transcriptBuffer.push(cleanText);
+  lastFinalTranscriptAt = Date.now();
+  updateAudioUi({ status: 'Transcript queued' });
+
+  if (wordCount(transcriptBuffer.join(' ')) >= TRANSCRIPT_BATCH_MAX_WORDS) {
+    await flushTranscriptBuffer();
+    return;
+  }
+  scheduleTranscriptFlush();
+}
+
+async function flushTranscriptBuffer() {
+  if (!transcriptBuffer.length) return;
+  const cleanText = transcriptBuffer.join(' ').replace(/\s+/g, ' ').trim();
+  if (!cleanText || cleanText.length < 3) return;
   const now = Date.now();
-  const durationMs = transcriptStartedAt ? Math.max(0, now - transcriptStartedAt) : undefined;
+  const durationMs = transcriptBufferStartedAt ? Math.max(0, now - transcriptBufferStartedAt) : undefined;
   const sequence = transcriptSequence++;
   transcriptStartedAt = now;
-  lastFinalTranscriptAt = now;
+  transcriptBuffer = [];
+  transcriptBufferStartedAt = 0;
+  clearTimeout(transcriptFlushTimer);
+  transcriptFlushTimer = null;
 
   try {
     const result = await window.truveil.sendTranscript({
@@ -399,6 +437,7 @@ function startFallbackRecorderSegment() {
   try {
     recorder.start();
     clearTimeout(audioFallbackSegmentTimer);
+    updateAudioUi({ status: 'Recording 12s audio segment' });
     audioFallbackSegmentTimer = setTimeout(() => {
       try {
         if (recorder.state === 'recording') {
@@ -406,7 +445,7 @@ function startFallbackRecorderSegment() {
           recorder.stop();
         }
       } catch {}
-    }, 5000);
+    }, AUDIO_SEGMENT_MS);
   } catch (err) {
     audioFallbackActive = false;
     logEvent(`Audio fallback could not start: ${err.message}`, 'warn');
@@ -439,6 +478,10 @@ function startTranscriptStreaming() {
   recognitionNetworkFailures = 0;
   lastSpeechLevelAt = 0;
   lastFinalTranscriptAt = 0;
+  transcriptBuffer = [];
+  transcriptBufferStartedAt = 0;
+  clearTimeout(transcriptFlushTimer);
+  transcriptFlushTimer = null;
   transcriptStartedAt = Date.now();
   updateAudioUi({ status: 'Starting' });
   startAudioMeter();
@@ -521,6 +564,9 @@ function stopTranscriptStreaming() {
   audioFallbackActive = false;
   clearTimeout(audioFallbackSegmentTimer);
   audioFallbackSegmentTimer = null;
+  clearTimeout(transcriptFlushTimer);
+  transcriptFlushTimer = null;
+  flushTranscriptBuffer().catch(() => {});
   clearTimeout(recognitionRestartTimer);
   recognitionRestartTimer = null;
   clearInterval(transcriptWatchdogTimer);
