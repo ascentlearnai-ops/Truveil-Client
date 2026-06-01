@@ -48,7 +48,7 @@ a { color: inherit; text-decoration: none; }
 button { font: inherit; cursor: pointer; }
 ::selection { background: var(--accent); color: white; }
 
-.page-shell { width: min(1180px, calc(100% - 40px)); margin: 0 auto; }
+.page-shell { width: min(1640px, calc(100% - 64px)); margin: 0 auto; }
 .nav {
   height: 68px;
   display: flex;
@@ -90,9 +90,9 @@ button { font: inherit; cursor: pointer; }
 .hero {
   min-height: calc(100vh - 68px);
   display: grid;
-  grid-template-columns: minmax(0, .9fr) minmax(420px, 1fr);
+  grid-template-columns: minmax(620px, 1.05fr) minmax(520px, .95fr);
   align-items: center;
-  gap: 58px;
+  gap: clamp(48px, 6vw, 112px);
   padding: 72px 0 54px;
 }
 .eyebrow {
@@ -104,14 +104,14 @@ button { font: inherit; cursor: pointer; }
 }
 h1, h2, h3 { letter-spacing: -.05em; }
 h1 {
-  font-size: clamp(50px, 7vw, 92px);
-  line-height: .92;
-  max-width: 690px;
+  font-size: clamp(56px, 5.8vw, 88px);
+  line-height: .96;
+  max-width: 900px;
 }
 .lede {
   color: var(--muted);
   font-size: 17px;
-  max-width: 620px;
+  max-width: 720px;
   margin: 26px 0 34px;
 }
 .button {
@@ -155,6 +155,8 @@ h1 {
 .screen-window {
   position: relative;
   min-height: 560px;
+  max-width: 720px;
+  margin-left: auto;
   border: 1px solid var(--line-strong);
   border-radius: 24px;
   background:
