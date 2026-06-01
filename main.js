@@ -4,6 +4,7 @@ const { execFile } = require('child_process');
 const { createClient } = require('@supabase/supabase-js');
 const WebSocket = require('ws');
 const runtimeConfig = require('./src/config/runtime-config.json');
+const OverlayScanner = require('./src/lockdown/scanner');
 
 let mainWindow;
 let blocker;
@@ -35,7 +36,25 @@ async function runWithRetry(operation, { attempts = 3, baseDelayMs = 650 } = {})
 const DEFAULT_POLICY = {
   allowed_apps: ['TruveilSecure', 'Zoom', 'Microsoft Teams', 'Google Chrome', 'Microsoft Edge'],
   allowed_sites: ['meet.google.com', 'zoom.us', 'teams.microsoft.com'],
-  blocked_sites: ['chatgpt.com', 'claude.ai', 'gemini.google.com', 'copilot.microsoft.com', 'perplexity.ai'],
+  blocked_sites: [
+    'chatgpt.com',
+    'claude.ai',
+    'gemini.google.com',
+    'copilot.microsoft.com',
+    'perplexity.ai',
+    'poe.com',
+    'you.com',
+    'phind.com',
+    'interviewcoder',
+    'interview coder',
+    'cluely',
+    'finalround',
+    'lockedin',
+    'parakeet',
+    'leetcode wizard',
+    'ultracode',
+    'interview copilot'
+  ],
   blocking_mode: 'warn_refocus'
 };
 
@@ -49,7 +68,7 @@ function normalizePolicy(session = {}) {
   return {
     allowed_apps: normalizeList(session.allowed_apps || session.allowedApps, DEFAULT_POLICY.allowed_apps),
     allowed_sites: normalizeList(session.allowed_sites || session.allowedSites, DEFAULT_POLICY.allowed_sites),
-    blocked_sites: normalizeList(session.blocked_sites || session.blockedSites, []),
+    blocked_sites: normalizeList(session.blocked_sites || session.blockedSites, DEFAULT_POLICY.blocked_sites),
     blocking_mode: session.blocking_mode || session.blockingMode || DEFAULT_POLICY.blocking_mode
   };
 }
@@ -90,6 +109,10 @@ function hostFromUrl(value = '') {
 function textMatchesSite(site, fields = []) {
   const terms = siteTerms(site);
   return terms.some(term => fields.some(field => String(field || '').toLowerCase().includes(term)));
+}
+
+function policyMatch(policyItems = [], fields = []) {
+  return (policyItems || []).find(site => textMatchesSite(site, fields));
 }
 
 function extractInviteCode(value = '') {
@@ -547,13 +570,14 @@ function evaluateForegroundPolicy(info, policy) {
   const title = String(info.title || info.windowTitle || '').toLowerCase();
   const detectedUrl = String(info.detectedUrl || '').toLowerCase();
   const detectedHost = String(info.detectedHost || hostFromUrl(info.detectedUrl)).toLowerCase();
-  const fields = [detectedHost, detectedUrl, title, processName];
+  const urlFields = [detectedHost, detectedUrl].filter(Boolean);
+  const titleFields = [title, processName].filter(Boolean);
   const ownNames = ['truveilsecure', 'electron'];
   if (ownNames.some(name => processName.includes(name) || title.includes('truveil secure'))) {
     return { allowed: true, detectionSource: 'process' };
   }
 
-  const blockedSite = (policy.blocked_sites || []).find(site => textMatchesSite(site, fields));
+  const blockedSite = policyMatch(policy.blocked_sites, urlFields) || (!detectedHost ? policyMatch(policy.blocked_sites, titleFields) : null);
   if (blockedSite) {
     return {
       allowed: false,
@@ -569,7 +593,7 @@ function evaluateForegroundPolicy(info, policy) {
   });
   if (appAllowed) return { allowed: true, detectionSource: 'process' };
 
-  const allowedSite = policy.allowed_sites.some(site => textMatchesSite(site, fields));
+  const allowedSite = policyMatch(policy.allowed_sites, urlFields) || (!detectedHost ? policyMatch(policy.allowed_sites, titleFields) : null);
   if (allowedSite) return { allowed: true, detectionSource: detectedHost ? 'url' : 'title' };
 
   return {
@@ -628,12 +652,31 @@ function stopPolicyMonitor() {
   lastBlockingKey = null;
 }
 
+function startOverlayScanner() {
+  if (!activeSession) return;
+  OverlayScanner.start(activeSession.sessionCode, mainWindow, (detection) => {
+    publishCandidateEvent('overlay_detected', {
+      severity: detection.severity || 'critical',
+      processName: 'hidden-overlay',
+      windowTitle: detection.windowTitle || 'Unknown hidden window',
+      matchedRule: detection.type || 'hidden overlay',
+      detectionSource: 'screen-capture-affinity',
+      reason: detection.flag?.detail || 'Hidden overlay or screen-capture-excluded window detected.'
+    });
+  });
+}
+
+function stopOverlayScanner() {
+  try { OverlayScanner.stop(); } catch {}
+}
+
 async function cleanupSession({ remote = false, quit = false, status = 'interrupted' } = {}) {
   const sessionToClose = activeSession;
   monitoring = false;
 
   try { globalShortcut.unregisterAll(); } catch {}
   stopPolicyMonitor();
+  stopOverlayScanner();
   try {
     if (blocker !== undefined) powerSaveBlocker.stop(blocker);
   } catch {}
@@ -729,6 +772,7 @@ ipcMain.handle('session:start', async (_, { sessionCode, candidateName }) => {
     try { blocker = powerSaveBlocker.start('prevent-display-sleep'); } catch {}
     try { registerSessionShortcuts(); } catch {}
     startPolicyMonitor();
+    startOverlayScanner();
 
     await updateSessionStatus('active');
     await publishCandidateEvent('candidate_connected', { severity: 'low' });

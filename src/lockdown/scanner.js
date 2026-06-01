@@ -1,6 +1,6 @@
-// Scans for Interview Coder and similar tools
-// Uses WDA_EXCLUDEFROMCAPTURE detection on Windows
-// Uses CGWindowSharingState detection on macOS
+// Scans for Interview Coder and similar stealth-assistance tools.
+// Windows: detects windows excluded from screen capture.
+// macOS: falls back to suspicious foreground app names.
 
 const { execSync } = require('child_process');
 const { EventEmitter } = require('events');
@@ -11,8 +11,17 @@ class WindowScanner extends EventEmitter {
     this.knownSuspiciousApps = [
       'interview coder',
       'interviewcoder',
+      'interview copilot',
       'ezzi',
       'shadecoder',
+      'cluely',
+      'finalround',
+      'final round',
+      'lockedin',
+      'locked in',
+      'parakeet',
+      'leetcode wizard',
+      'ultracode',
       'interview browser',
       'interviewbrowser',
       'interview solver',
@@ -22,7 +31,6 @@ class WindowScanner extends EventEmitter {
   }
 
   detectWindows_Windows() {
-    // PowerShell script to enumerate windows with WDA_EXCLUDEFROMCAPTURE (0x11)
     const psScript = `
 $code = @"
 using System;
@@ -61,17 +69,16 @@ Add-Type -TypeDefinition $code
     `.trim();
 
     try {
-      const result = execSync(\`powershell -NoProfile -ExecutionPolicy Bypass -Command "\${psScript}"\`, {
+      const result = execSync(`powershell -NoProfile -ExecutionPolicy Bypass -Command "${psScript}"`, {
         timeout: 5000,
         windowsHide: true
       }).toString().trim();
 
-      if (result && result !== '') {
-        const windows = result.split('|||').filter(Boolean);
-        return windows.map(title => ({
+      if (result) {
+        return result.split('|||').filter(Boolean).map(title => ({
           type: 'WDA_EXCLUDEFROMCAPTURE',
           windowTitle: title,
-          severity: 'CRITICAL'
+          severity: 'critical'
         }));
       }
     } catch (err) {
@@ -81,20 +88,19 @@ Add-Type -TypeDefinition $code
   }
 
   detectWindows_Mac() {
-    // Check for windows with NSWindowSharingNone using system_profiler or CGWindowList
     try {
-      const script = \`
+      const script = `
         tell application "System Events"
           set appList to name of every process whose background only is false
           return appList
         end tell
-      \`;
-      const result = execSync(\`osascript -e '\${script}'\`, { timeout: 5000 }).toString().toLowerCase();
+      `;
+      const result = execSync(`osascript -e '${script}'`, { timeout: 5000 }).toString().toLowerCase();
       const suspicious = this.knownSuspiciousApps.filter(app => result.includes(app));
       return suspicious.map(app => ({
         type: 'SUSPICIOUS_APP_RUNNING',
         windowTitle: app,
-        severity: 'HIGH'
+        severity: 'high'
       }));
     } catch {}
     return [];
@@ -113,26 +119,29 @@ Add-Type -TypeDefinition $code
 
 let scanInterval;
 
-function start(sessionId, mainWindow) {
+function start(sessionId, mainWindow, onDetection) {
+  stop();
   const scanner = new WindowScanner();
 
   scanInterval = setInterval(() => {
     const detections = scanner.scan();
-    if (detections.length > 0) {
-      detections.forEach(detection => {
-        mainWindow.webContents.send('security-flag', {
-          type: 'OVERLAY_DETECTED',
-          detail: \`Hidden overlay detected: "\${detection.windowTitle}" — possible Interview Coder or AI assistant\`,
-          severity: detection.severity,
-          timestamp: Date.now()
-        });
-      });
-    }
-  }, 10000); // every 10 seconds
+    detections.forEach(detection => {
+      const flag = {
+        type: 'OVERLAY_DETECTED',
+        detail: `Hidden overlay detected: "${detection.windowTitle}" - possible Interview Coder or AI assistant`,
+        severity: detection.severity,
+        timestamp: Date.now(),
+        sessionId
+      };
+      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('security-flag', flag);
+      if (typeof onDetection === 'function') onDetection({ ...detection, flag });
+    });
+  }, 10000);
 }
 
 function stop() {
-  clearInterval(scanInterval);
+  if (scanInterval) clearInterval(scanInterval);
+  scanInterval = null;
 }
 
-module.exports = { start, stop };
+module.exports = { start, stop, WindowScanner };
