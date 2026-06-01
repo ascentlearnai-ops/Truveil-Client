@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Truveil Secure is the candidate app for verified remote interviews. Paste your interview code, consent, and keep your session integrity visible.">
+  <meta name="description" content="Truveil Secure is the candidate app for verified remote interviews. Paste your session code, consent, and stream transcript signals to your interviewer.">
   <title>Truveil Secure - Candidate Interview App</title>
   <link rel="stylesheet" href="styles.css">
   <script>
@@ -13,335 +13,156 @@
   </script>
 </head>
 <body>
-
-  <!-- Ambient orbs -->
-  <div class="orb orb-1"></div>
-  <div class="orb orb-2"></div>
-  <div class="orb orb-3"></div>
-
-  <!-- Noise overlay -->
-  <svg class="noise-overlay" xmlns="http://www.w3.org/2000/svg">
-    <filter id="noiseFilter"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch"/></filter>
-    <rect width="100%" height="100%" filter="url(#noiseFilter)"/>
-  </svg>
-
-  <!-- Nav -->
-  <nav>
-    <a href="#" class="nav-logo">
-      <span class="logo-mark"></span>
-      <span>Truveil <em>Secure</em></span>
-    </a>
-    <div class="nav-links">
-      <a href="#how">How it works</a>
-      <a href="#privacy">Privacy</a>
-      <a href="#faq">FAQ</a>
-      <a href="https://truveil.vercel.app">For recruiters ↗</a>
-    </div>
-    <div class="nav-right">
-      <a href="#download" class="btn btn-primary">Download Secure</a>
-    </div>
-  </nav>
-
-  <!-- Hero -->
-  <header class="hero">
-    <div class="hero-content">
-      <div class="trust-badge fade-up d1">
-        <span class="dot"></span> CANDIDATE INTERVIEW CLIENT
+  <div class="page-shell">
+    <nav class="nav">
+      <a class="brand" href="#top" aria-label="Truveil Secure home">
+        <span class="brand-mark"></span>
+        <span>Truveil Secure</span>
+      </a>
+      <div class="nav-links">
+        <a href="#flow">Flow</a>
+        <a href="#privacy">Privacy</a>
+        <a href="#download">Download</a>
       </div>
-      <h1 class="fade-up d2">
-        A clean room for<br>
-        <span class="gradient-text">remote interviews.</span>
-      </h1>
-      <p class="sub fade-up d3">
-        Truveil Secure connects to your recruiter’s session code, asks for consent, then keeps transcript and focus signals visible during the interview. No browser extension. No account. No background service.
-      </p>
-      <div class="hero-ctas fade-up d4">
-        <a href="#download" class="btn btn-primary lg">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="7 10 12 15 17 10"/>
-            <line x1="12" x2="12" y1="15" y2="3"/>
-          </svg>
-          Download Secure
-        </a>
-        <a href="#how" class="btn btn-ghost lg">View flow</a>
-      </div>
-      <div class="hero-note fade-up d5">
-        Paste one code · starts after consent · closes with the session
-      </div>
-      <div class="hero-proof fade-up d5">
-        <div><span>01</span><strong>Consent first</strong></div>
-        <div><span>02</span><strong>Transcript-first</strong></div>
-        <div><span>03</span><strong>Closes with session</strong></div>
-      </div>
-    </div>
+      <a class="nav-cta" href="#download">Get app</a>
+    </nav>
 
-    <!-- Hero mockup -->
-    <div class="hero-mockup fade-up d6">
-      <div class="mockup-glow"></div>
-      <div class="mock-window">
-        <div class="mock-bar">
-          <span class="mock-logo-dot"></span>
-          <span class="mock-title">Truveil Secure · Session TRV-8FR2XP</span>
-          <span class="mock-live"><span class="mock-live-dot"></span>LIVE</span>
-        </div>
-        <div class="mock-body">
-          <div class="shield-wrap">
-            <div class="scan-ring r1"></div>
-            <div class="scan-ring r2"></div>
-            <div class="scan-ring r3"></div>
-            <svg class="shield" width="82" height="82" viewBox="0 0 24 24" fill="none" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-              <defs>
-                <linearGradient id="sg" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stop-color="#22c55e"/>
-                  <stop offset="100%" stop-color="#60a5fa"/>
-                </linearGradient>
-              </defs>
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="url(#sg)"/>
-              <polyline points="9 12 11 14 15 10" stroke="#22c55e" stroke-width="1.8"/>
-            </svg>
+    <main id="top">
+      <section class="hero">
+        <div class="hero-copy reveal">
+          <p class="eyebrow">Candidate verification client</p>
+          <h1>Paste the code. Start the interview. Stay in view.</h1>
+          <p class="lede">Truveil Secure is a small desktop app your interviewer uses to verify the session. It records short speech segments for transcription, watches restricted-site policy, and stops when the interview ends.</p>
+          <div class="hero-actions">
+            <a class="button primary" href="#download">Download for Windows</a>
+            <a class="button secondary" href="#privacy">Review privacy</a>
           </div>
-          <div class="mock-title-lg">Transcript Relay Active</div>
-          <div class="mock-sub">Live speech text · local risk scoring live</div>
-          <div class="mock-audio-wave" aria-hidden="true">
-            <span></span><span></span><span></span><span></span><span></span><span></span>
-            <span></span><span></span><span></span><span></span><span></span><span></span>
-            <span></span><span></span><span></span><span></span>
-          </div>
-          <div class="mock-stats">
-            <div class="ms"><span class="ms-label">ELAPSED</span><span class="ms-val mono">00:12:44</span></div>
-            <div class="ms"><span class="ms-label">STATUS</span><span class="ms-val"><span class="ms-dot"></span> Monitoring</span></div>
-            <div class="ms"><span class="ms-label">INTEGRITY</span><span class="ms-val">100%</span></div>
+          <div class="inline-status" id="inviteCodePanel" hidden>
+            <span>Invite code</span>
+            <strong id="inviteCodeText">TRV-XXXXXX</strong>
+            <button type="button" id="copyCodeBtn">Copy</button>
+            <a href="#" id="openAppLink" hidden>Open app</a>
           </div>
         </div>
-      </div>
-    </div>
-  </header>
 
-  <section class="assurance-band" aria-label="Truveil Secure assurances">
-    <div class="assurance-item">
-      <span class="ai-kicker">Mic</span>
-      <strong>Speech becomes live transcript text.</strong>
-      <p>Truveil uses live transcript first. If that service fails, short encrypted chunks relay to the admin app for local transcription.</p>
-    </div>
-    <div class="assurance-item">
-      <span class="ai-kicker">Focus</span>
-      <strong>Only interview integrity events.</strong>
-      <p>Window switches and recruiter-blocked sites are flagged during the session.</p>
-    </div>
-    <div class="assurance-item">
-      <span class="ai-kicker">Privacy</span>
-      <strong>No files, screenshots, or keylogging.</strong>
-      <p>The app is scoped to the live interview and exits when the session ends.</p>
-    </div>
-  </section>
-
-  <!-- Three-step -->
-  <section class="how" id="how">
-    <div class="section-head">
-      <div class="eyebrow">HOW IT WORKS</div>
-      <h2>Three steps. Zero friction.</h2>
-      <p class="section-sub">The app is deliberately small: paste the code, approve the session, keep it open.</p>
-    </div>
-    <div class="steps">
-      <div class="step fade-up">
-        <div class="step-num">01</div>
-        <h3>Download Truveil Secure</h3>
-        <p>A small Windows installer. No admin permissions, no background services. Install it once and keep it ready for your interview code.</p>
-        <div class="step-icon">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="7 10 12 15 17 10"/>
-            <line x1="12" x2="12" y1="15" y2="3"/>
-          </svg>
+        <div class="secure-visual reveal" aria-label="Truveil Secure app preview">
+          <div class="screen-window">
+            <div class="window-top">
+              <span class="window-dot"></span>
+              <span>Truveil Secure</span>
+              <strong>Monitoring</strong>
+            </div>
+            <div class="secure-center">
+              <div class="scan-halo"></div>
+              <div class="checkmark">✓</div>
+              <h2>Session verified</h2>
+              <p id="mockSession">TRV-482910 · transcript relay active</p>
+            </div>
+            <div class="signal-panel">
+              <div>
+                <span>Mic level</span>
+                <strong>Live</strong>
+              </div>
+              <div class="wave" aria-hidden="true">
+                <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+              </div>
+            </div>
+            <div class="policy-strip">
+              <span>Allowed: Zoom, Meet, Teams</span>
+              <span>Warn + refocus</span>
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="step fade-up d2">
-        <div class="step-num">02</div>
-        <h3>Enter your session code</h3>
-        <p>Your recruiter will send you a code like <code>TRV-8FR2XP</code>. Paste it once. Truveil Secure confirms the admin session and prepares transcript monitoring.</p>
-        <div class="step-icon">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="5" width="18" height="14" rx="2"/>
-            <path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/>
-          </svg>
-        </div>
-      </div>
-      <div class="step fade-up d3">
-        <div class="step-num">03</div>
-        <h3>Start your interview</h3>
-        <p>Join Zoom, Meet, or Teams normally. Truveil Secure transcribes your spoken answers after consent, streams text to Truveil, and closes when the session ends.</p>
-        <div class="step-icon">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="5 3 19 12 5 21 5 3"/>
-          </svg>
-        </div>
-      </div>
-    </div>
-  </section>
+      </section>
 
-  <!-- Privacy pledge -->
-  <section class="privacy" id="privacy">
-    <div class="section-head">
-      <div class="eyebrow">PRIVACY PLEDGE</div>
-      <h2>What Truveil Secure <span class="gradient-text">will and won't</span> do.</h2>
-      <p class="section-sub">Full transparency. Nothing happens without your consent.</p>
-    </div>
-    <div class="privacy-grid">
-      <div class="pc ok">
-        <div class="pc-head">
-          <div class="pc-icon ok-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          </div>
-          <h3>What we DO</h3>
-        </div>
-        <ul>
-          <li><strong>Verify your session code</strong> — confirm the interview exists and is active.</li>
-          <li><strong>Monitor focused window</strong> — know when you switch apps during the call.</li>
-          <li><strong>Transcribe spoken answers</strong> — only after your explicit consent prompt.</li>
-          <li><strong>Report integrity signals</strong> — pass anomalies to your recruiter's dashboard.</li>
-          <li><strong>Close automatically</strong> — the moment your recruiter ends the session.</li>
-        </ul>
-      </div>
-      <div class="pc no">
-        <div class="pc-head">
-          <div class="pc-icon no-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
-          </div>
-          <h3>What we DON'T</h3>
-        </div>
-        <ul>
-          <li><strong>Read your files</strong> — Truveil Secure never touches your documents or folders.</li>
-          <li><strong>Capture your screen</strong> — we never record or screenshot your display.</li>
-          <li><strong>Log keystrokes</strong> — no keylogging, ever. We only receive live transcript text.</li>
-          <li><strong>Run after close</strong> — the secure session ends when the interview ends.</li>
-          <li><strong>Touch your browser</strong> — zero extensions, zero browser access, zero cookies.</li>
-        </ul>
-      </div>
-    </div>
-  </section>
-
-  <!-- Download -->
-  <section class="download" id="download">
-    <div class="download-card">
-      <div class="download-shimmer"></div>
-      <div class="trust-badge"><span class="dot"></span> READY TO DOWNLOAD</div>
-      <h2>Get Truveil Secure</h2>
-      <p class="download-sub">A small Windows installer. Download it, paste your session code, and Truveil starts secure transcript monitoring after consent.</p>
-
-      <div class="invite-code" id="inviteCodePanel" hidden>
-        <span>Invite code detected</span>
-        <strong id="inviteCodeText">TRV-XXXXXX</strong>
-        <button type="button" id="copyCodeBtn">Copy code</button>
-        <a href="#" id="openAppLink" hidden>Open app</a>
-      </div>
-
-      <div class="download-buttons">
-        <a href="/downloads/TruveilSecure-Setup-1.0.0.exe" class="dl-btn primary" id="windowsDownloadLink" data-download-link download>
-          <div class="dl-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 5.5 10.5 4.3v7.5H3Zm0 7h7.5v7.2L3 18.5ZM11.5 4.2 21 3v9H11.5Zm0 8.8H21v9l-9.5-1.2Z"/></svg>
-          </div>
-          <div>
-            <div class="dl-plat">Windows</div>
-            <div class="dl-meta">Windows 10 or newer · paste code to start</div>
-          </div>
-        </a>
-        <a href="#" class="dl-btn ghost" onclick="event.preventDefault();alert('macOS version is coming soon. Use the Windows version on any Windows laptop you have access to.');">
-          <div class="dl-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M16.365 1.43c0 1.14-.493 2.27-1.177 3.08-.744.9-1.99 1.57-2.987 1.57-.12-1.03.41-2.11 1.03-2.9.74-1.02 2.02-1.72 3.134-1.75.02.02.02.02 0 0zm4.565 17.52c-.66 1.04-1.54 2.32-2.56 2.34-1.02.02-1.35-.66-2.51-.66-1.16 0-1.53.64-2.49.68-1 .04-1.77-1.12-2.44-2.16C6.33 15.16 4.85 8.17 9.58 6.4c1.23-.44 2.4.01 3.13.3.63.25 1.82.91 3.03 0 1.23-.9 2.86-.72 3.69 0-.85.49-2.02 1.83-1.84 3.94.16 1.96 1.47 2.96 2.45 3.22-.41 1.44-1.02 2.74-2.11 3.09z"/></svg>
-          </div>
-          <div>
-            <div class="dl-plat">macOS</div>
-            <div class="dl-meta">Coming soon</div>
-          </div>
-        </a>
-      </div>
-
-      <div class="download-steps">
-        <span class="ds-item"><span class="ds-n">1</span> Run the file</span>
-        <span class="ds-arrow">→</span>
-        <span class="ds-item"><span class="ds-n">2</span> Paste session code</span>
-        <span class="ds-arrow">→</span>
-        <span class="ds-item"><span class="ds-n">3</span> Transcript starts</span>
-      </div>
-    </div>
-  </section>
-
-  <!-- FAQ -->
-  <section class="faq" id="faq">
-    <div class="section-head">
-      <div class="eyebrow">FAQ</div>
-      <h2>Answers, upfront.</h2>
-    </div>
-    <div class="faq-grid">
-      <details class="faq-item" open>
-        <summary>Is this spyware?</summary>
-        <p>No. Truveil Secure only runs when you open it, only monitors things directly related to the live interview (focused window, live transcript text or fallback audio transcription, session state), and closes itself when the recruiter ends the session. Nothing runs in the background.</p>
-      </details>
-      <details class="faq-item">
-        <summary>Do I need to install it?</summary>
-        <p>Yes, but it is lightweight and does not need admin permissions. If your IT org blocks unknown installers, check with your recruiter for a signed fallback.</p>
-      </details>
-      <details class="faq-item">
-        <summary>What if I don't have the session code?</summary>
-        <p>Your recruiter will email or message you a 10-character code starting with <code>TRV-</code>. If you don't see it, check your spam folder, then ask the recruiter to resend.</p>
-      </details>
-      <details class="faq-item">
-        <summary>Will it slow down my computer?</summary>
-        <p>No. Truveil Secure uses under 1% CPU during an average interview. It's lighter than a Chrome tab.</p>
-      </details>
-      <details class="faq-item">
-        <summary>What if my interview is on Zoom / Meet / Teams?</summary>
-        <p>It works with all three. Truveil Secure doesn't replace your video call — it runs alongside it. Just join your interview normally in Zoom, Meet, or Teams, and keep Truveil Secure open while you talk.</p>
-      </details>
-      <details class="faq-item">
-        <summary>Can I close it mid-interview?</summary>
-        <p>You can — but your recruiter will see a "session interrupted" flag on their side, which usually isn't what you want. The app is designed to be there for the duration of your call and close itself when the interview wraps.</p>
-      </details>
-    </div>
-  </section>
-
-  <!-- Footer -->
-  <footer>
-    <div class="footer-top">
-      <div class="footer-brand">
-        <a href="#" class="nav-logo">
-          <span class="logo-mark"></span>
-          <span>Truveil <em>Secure</em></span>
-        </a>
-        <p>The candidate side of Truveil — a verified environment for the person being interviewed.</p>
-      </div>
-      <div class="footer-cols">
+      <section class="rail reveal" aria-label="Session expectations">
         <div>
-          <h4>Product</h4>
-          <a href="#download">Download</a>
-          <a href="#how">How it works</a>
-          <a href="#privacy">Privacy pledge</a>
+          <span>01</span>
+          <strong>Consent first</strong>
+          <p>Nothing starts until you enter the recruiter code and approve the secure session.</p>
         </div>
         <div>
-          <h4>For recruiters</h4>
-          <a href="https://truveil.vercel.app">Truveil Command Center ↗</a>
-          <a href="https://truveil.vercel.app#pricing">Pricing</a>
+          <span>02</span>
+          <strong>Transcript relay</strong>
+          <p>Speech is sent in short segments for transcription. Remote audio is deleted after processing.</p>
         </div>
         <div>
-          <h4>Support</h4>
-          <a href="mailto:support@truveil.com">support@truveil.com</a>
-          <a href="#faq">FAQ</a>
+          <span>03</span>
+          <strong>Policy visible</strong>
+          <p>Restricted sites trigger a warning and refocus instead of hidden process killing.</p>
         </div>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <span>© 2026 Truveil Inc.</span>
-      <span>Built for interviews that actually matter.</span>
-    </div>
-  </footer>
+      </section>
+
+      <section class="flow-section" id="flow">
+        <div class="section-copy reveal">
+          <p class="eyebrow">How it works</p>
+          <h2>A quiet setup before your call.</h2>
+          <p>The app is intentionally boring in the right places: one code, one consent screen, one active session. You still join Zoom, Meet, or Teams normally.</p>
+        </div>
+        <div class="timeline reveal">
+          <article>
+            <span class="step">1</span>
+            <h3>Download once</h3>
+            <p>Install the Windows client from this page. No GitHub redirect, no account creation.</p>
+          </article>
+          <article>
+            <span class="step">2</span>
+            <h3>Paste the code</h3>
+            <p>Your interviewer sends a code like <code>TRV-482910</code>. Truveil confirms the session policy.</p>
+          </article>
+          <article>
+            <span class="step">3</span>
+            <h3>Keep it open</h3>
+            <p>During the interview, Truveil shows mic health, transcript status, and any policy warnings.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="privacy-section" id="privacy">
+        <div class="privacy-visual reveal">
+          <div class="privacy-card positive">
+            <span>Signals collected</span>
+            <strong>Transcript, mic health, focused app, restricted-site evidence.</strong>
+          </div>
+          <div class="privacy-card negative">
+            <span>Signals not collected</span>
+            <strong>No files, no keylogging, no screenshots, no background service.</strong>
+          </div>
+        </div>
+        <div class="section-copy reveal">
+          <p class="eyebrow">Privacy posture</p>
+          <h2>Visible monitoring, not hidden surveillance.</h2>
+          <p>Truveil Secure is designed to be obvious while it runs. The app warns you when policy is triggered, and your interviewer receives evidence labels instead of silent enforcement.</p>
+        </div>
+      </section>
+
+      <section class="download-section reveal" id="download">
+        <div class="download-copy">
+          <p class="eyebrow">Download</p>
+          <h2>Get Truveil Secure for Windows.</h2>
+          <p>After install, open the app, paste your session code, approve consent, and start your interview.</p>
+        </div>
+        <a class="download-button" href="/downloads/TruveilSecure-Setup-1.0.0.exe" data-download-link download>
+          <span>Download .exe</span>
+          <strong>TruveilSecure-Setup-1.0.0.exe</strong>
+        </a>
+      </section>
+    </main>
+
+    <footer>
+      <span>Truveil Secure</span>
+      <a href="https://truveil.vercel.app">For interviewers</a>
+      <span>© 2026 Truveil</span>
+    </footer>
+  </div>
 
   <script>
-    // Fade-up observer
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-    }, { threshold: 0.1 });
-    document.querySelectorAll('.fade-up').forEach(el => io.observe(el));
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) entry.target.classList.add('visible');
+      });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
 
     const params = new URLSearchParams(window.location.search);
     const inviteCode = (params.get('code') || '').trim().toUpperCase();
@@ -349,23 +170,16 @@
     const downloadUrl = window.TRUVEIL_CLIENT_CONFIG?.downloadUrl;
 
     if (downloadUrl) {
-      document.querySelectorAll('[data-download-link]').forEach(link => {
-        link.href = downloadUrl;
-      });
+      document.querySelectorAll('[data-download-link]').forEach(link => { link.href = downloadUrl; });
     }
 
     if (codePattern.test(inviteCode)) {
-      document.querySelectorAll('code').forEach(code => {
-        if (code.textContent.trim() === 'TRV-8FR2XP') code.textContent = inviteCode;
-      });
-      document.querySelectorAll('.mock-title').forEach(el => {
-        el.textContent = `Truveil Secure · Session ${inviteCode}`;
-      });
-
       const panel = document.getElementById('inviteCodePanel');
       const text = document.getElementById('inviteCodeText');
       const copyBtn = document.getElementById('copyCodeBtn');
       const openAppLink = document.getElementById('openAppLink');
+      const mockSession = document.getElementById('mockSession');
+      if (mockSession) mockSession.textContent = `${inviteCode} · transcript relay active`;
       if (panel && text && copyBtn) {
         text.textContent = inviteCode;
         panel.hidden = false;
@@ -377,22 +191,20 @@
           try {
             await navigator.clipboard.writeText(inviteCode);
             copyBtn.textContent = 'Copied';
-            setTimeout(() => { copyBtn.textContent = 'Copy code'; }, 1600);
+            setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1400);
           } catch {
-            copyBtn.textContent = 'Copy failed';
+            copyBtn.textContent = 'Failed';
           }
         });
       }
     }
 
-    // Smooth anchor scroll
-    document.querySelectorAll('a[href^="#"]').forEach(a => {
-      a.addEventListener('click', (e) => {
-        const id = a.getAttribute('href');
-        if (id.length > 1) {
-          const el = document.querySelector(id);
-          if (el) { e.preventDefault(); el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
-        }
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', event => {
+        const target = document.querySelector(anchor.getAttribute('href'));
+        if (!target) return;
+        event.preventDefault();
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
     });
   </script>
