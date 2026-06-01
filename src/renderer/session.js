@@ -3,6 +3,8 @@ const $ = id => document.getElementById(id);
 const AUDIO_SEGMENT_MS = 12000;
 const TRANSCRIPT_BATCH_MS = 12000;
 const TRANSCRIPT_BATCH_MAX_WORDS = 70;
+const SPEECH_RMS_THRESHOLD = 0.012;
+const SPEECH_PEAK_THRESHOLD = 0.06;
 
 const screens = {
   setup: $('setup-screen'),
@@ -45,6 +47,7 @@ let lastRms = 0;
 let lastPeak = 0;
 let lastSpeechLevelAt = 0;
 let lastFinalTranscriptAt = 0;
+let activeSegmentStats = null;
 
 const statusPill = $('statusPill');
 const statusText = $('statusText');
@@ -185,13 +188,13 @@ function updateAudioUi({ rms = lastRms, peak = lastPeak, status } = {}) {
   if (micLevelFill) micLevelFill.style.width = `${Math.round(level * 100)}%`;
   if (micLevelLabel) micLevelLabel.textContent = `${Math.round(level * 100)}%`;
   const count = audioFallbackActive ? audioFallbackChunks : transcriptCount;
-  if (audioStateEl) audioStateEl.textContent = status || (audioFallbackActive ? 'Audio fallback' : 'Listening');
+  if (audioStateEl) audioStateEl.textContent = status || (audioFallbackActive ? 'Cloud transcription' : 'Listening');
   if (audioChunkCountEl) audioChunkCountEl.textContent = String(count);
   if (uploadStatusEl) {
     if (audioFallbackActive) {
       uploadStatusEl.textContent = pendingAudioUploads
-        ? `${pendingAudioUploads} audio chunk${pendingAudioUploads === 1 ? '' : 's'} uploading for local admin transcription`
-        : 'Audio fallback active - admin transcribes locally';
+        ? `${pendingAudioUploads} audio segment${pendingAudioUploads === 1 ? '' : 's'} uploading for admin transcription`
+        : 'Cloud transcript relay active - raw audio is deleted after processing';
       uploadStatusEl.className = pendingAudioUploads ? 'audio-status busy' : 'audio-status ok';
     } else {
       uploadStatusEl.textContent = transcriptFailures
@@ -231,7 +234,11 @@ function startAudioMeter() {
     }
     lastRms = Math.sqrt(sum / samples.length);
     lastPeak = peak;
-    if (lastRms > 0.012 || lastPeak > 0.08) lastSpeechLevelAt = Date.now();
+    if (activeSegmentStats) {
+      activeSegmentStats.maxRms = Math.max(activeSegmentStats.maxRms, lastRms);
+      activeSegmentStats.maxPeak = Math.max(activeSegmentStats.maxPeak, lastPeak);
+    }
+    if (lastRms > SPEECH_RMS_THRESHOLD || lastPeak > 0.08) lastSpeechLevelAt = Date.now();
     updateAudioUi({ rms: lastRms, peak: lastPeak });
 
     if (Date.now() - lastSentAt > 900) {
@@ -328,10 +335,10 @@ function scheduleRecognitionRestart() {
   }, 750);
 }
 
-async function uploadFallbackAudioBlob(blob, sequence, startedAt, attempt = 1) {
+async function uploadFallbackAudioBlob(blob, sequence, startedAt, stats = {}, attempt = 1) {
   if (!blob || blob.size < 128 || sessionEnding) return;
   pendingAudioUploads++;
-  updateAudioUi({ status: attempt > 1 ? `Retrying audio ${attempt}/3` : 'Uploading audio' });
+  updateAudioUi({ status: attempt > 1 ? `Retrying segment ${attempt}/3` : 'Uploading transcript segment' });
   try {
     const arrayBuffer = await blob.arrayBuffer();
     const result = await window.truveil.uploadAudioChunk({
@@ -339,22 +346,22 @@ async function uploadFallbackAudioBlob(blob, sequence, startedAt, attempt = 1) {
       mimeType: blob.type || mediaRecorder?.mimeType || 'audio/webm;codecs=opus',
       sequence,
       durationMs: Math.max(0, Date.now() - startedAt),
-      rms: lastRms,
-      peak: lastPeak,
+      rms: Number(stats.rms) || lastRms,
+      peak: Number(stats.peak) || lastPeak,
       timestamp: Date.now()
     });
     if (!result?.ok) throw new Error(result?.error || 'Audio upload failed');
     if (!result.skipped) audioFallbackChunks++;
-    updateAudioUi({ status: 'Audio sent' });
+    updateAudioUi({ status: 'Segment sent' });
   } catch (err) {
-    logEvent(`Audio fallback upload failed: ${err.message}`, 'warn');
+    logEvent(`Audio segment upload failed: ${err.message}`, 'warn');
     if (attempt < 3 && !sessionEnding) {
       const retryDelay = 1200 * attempt;
-      setTimeout(() => uploadFallbackAudioBlob(blob, sequence, startedAt, attempt + 1), retryDelay);
-      updateAudioUi({ status: 'Audio retry scheduled' });
+      setTimeout(() => uploadFallbackAudioBlob(blob, sequence, startedAt, stats, attempt + 1), retryDelay);
+      updateAudioUi({ status: 'Segment retry scheduled' });
     } else {
-      toast('Audio fallback upload failed. Check your connection and keep Truveil open.', 'warn');
-      updateAudioUi({ status: 'Audio upload issue' });
+      toast('Audio segment upload failed. Check your connection and keep Truveil open.', 'warn');
+      updateAudioUi({ status: 'Segment upload issue' });
     }
   } finally {
     pendingAudioUploads = Math.max(0, pendingAudioUploads - 1);
@@ -362,10 +369,10 @@ async function uploadFallbackAudioBlob(blob, sequence, startedAt, attempt = 1) {
   }
 }
 
-function startAudioFallback(reason = 'speech recognition failed') {
+function startAudioFallback(reason = 'cloud transcription primary') {
   if (audioFallbackActive || sessionEnding) return;
   if (!window.MediaRecorder || !window.truveil.uploadAudioChunk) {
-    logEvent('Audio fallback is unavailable in this build', 'warn');
+    logEvent('Cloud audio transcription is unavailable in this build', 'warn');
     updateAudioUi({ status: 'Transcript unavailable' });
     return;
   }
@@ -384,9 +391,8 @@ function startAudioFallback(reason = 'speech recognition failed') {
 
   lastAudioChunkAt = Date.now();
 
-  logEvent(`Switched to audio fallback: ${reason}`, 'info');
-  toast('Live transcript service stalled, so Truveil switched to admin-side audio transcription.', 'warn');
-  updateAudioUi({ status: 'Audio fallback active' });
+  logEvent(`Cloud transcript relay started: ${reason}`, 'info');
+  updateAudioUi({ status: 'Recording 12s segments' });
   startFallbackRecorderSegment();
 }
 
@@ -396,6 +402,8 @@ function startFallbackRecorderSegment() {
   const mimeType = getSupportedAudioMimeType();
   const sequence = audioFallbackSequence++;
   const startedAt = Date.now();
+  const segmentStats = { startedAt, maxRms: 0, maxPeak: 0 };
+  activeSegmentStats = segmentStats;
   const parts = [];
   let recorder;
 
@@ -419,12 +427,20 @@ function startFallbackRecorderSegment() {
   };
   recorder.onstart = () => {
     lastAudioChunkAt = startedAt;
-    updateAudioUi({ status: 'Recording audio segment' });
+    updateAudioUi({ status: 'Recording 12s segment' });
   };
   recorder.onstop = () => {
+    if (activeSegmentStats === segmentStats) activeSegmentStats = null;
     if (parts.length && !sessionEnding) {
       const blob = new Blob(parts, { type: recorder.mimeType || mimeType || 'audio/webm;codecs=opus' });
-      uploadFallbackAudioBlob(blob, sequence, startedAt);
+      const rms = Math.max(segmentStats.maxRms, lastRms);
+      const peak = Math.max(segmentStats.maxPeak, lastPeak);
+      const hasSpeech = rms >= SPEECH_RMS_THRESHOLD || peak >= SPEECH_PEAK_THRESHOLD;
+      if (hasSpeech) {
+        uploadFallbackAudioBlob(blob, sequence, startedAt, { rms, peak });
+      } else {
+        updateAudioUi({ status: 'Mic live - no speech detected' });
+      }
     }
     if (mediaRecorder === recorder) mediaRecorder = null;
     if (audioFallbackActive && !sessionEnding) {
@@ -485,15 +501,12 @@ function startTranscriptStreaming() {
   transcriptStartedAt = Date.now();
   updateAudioUi({ status: 'Starting' });
   startAudioMeter();
-  startTranscriptWatchdog();
+  startAudioFallback('12-second cloud transcription segments');
+}
 
+function startWebSpeechUiOnly() {
   const RecognitionCtor = getSpeechRecognitionCtor();
-  if (!RecognitionCtor) {
-    logEvent('Live transcript engine is unavailable in this Electron runtime', 'warn');
-    startAudioFallback('speech recognition unavailable');
-    return;
-  }
-
+  if (!RecognitionCtor) return;
   recognition = new RecognitionCtor();
   recognition.continuous = true;
   recognition.interimResults = true;
@@ -562,6 +575,7 @@ function stopTranscriptStreaming() {
   } catch {}
   mediaRecorder = null;
   audioFallbackActive = false;
+  activeSegmentStats = null;
   clearTimeout(audioFallbackSegmentTimer);
   audioFallbackSegmentTimer = null;
   clearTimeout(transcriptFlushTimer);
@@ -644,11 +658,19 @@ window.truveil.onBlockingWarning((warning = {}) => {
   if (!sessionStart) return;
   const processName = warning.processName || 'Unknown app';
   const title = warning.windowTitle || 'Unknown window';
+  const detectedHost = warning.detectedHost || '';
+  const detectedUrl = warning.detectedUrl || '';
+  const matchedRule = warning.matchedRule ? ` · rule: ${warning.matchedRule}` : '';
+  const target = detectedHost
+    ? `Restricted site detected: ${detectedHost}`
+    : detectedUrl
+      ? `Restricted site detected: ${detectedUrl}`
+      : `Disallowed app detected: ${processName} - ${title}`;
   const banner = $('blockingBanner');
-  $('blockingDetail').textContent = `${processName}: ${title}`;
+  $('blockingDetail').textContent = `${target}${matchedRule}`;
   banner.hidden = false;
   setTimeout(() => { banner.hidden = true; }, 6000);
-  logEvent(`Disallowed app or tab detected: ${processName}`, 'warn');
+  logEvent(detectedHost ? `Restricted site detected: ${detectedHost}` : `Disallowed app detected: ${processName}`, 'warn');
   setStatus('warn', 'Action required');
 });
 

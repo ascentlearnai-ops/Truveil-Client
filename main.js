@@ -70,6 +70,28 @@ function siteTerms(site) {
   return Array.from(new Set([clean, first].filter(term => term && term.length >= 3)));
 }
 
+function normalizeUrl(value = '') {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  if (/^https?:\/\//i.test(raw)) return raw;
+  if (/^[a-z0-9.-]+\.[a-z]{2,}(\/.*)?$/i.test(raw)) return `https://${raw}`;
+  return '';
+}
+
+function hostFromUrl(value = '') {
+  try {
+    const url = new URL(normalizeUrl(value));
+    return url.hostname.replace(/^www\./i, '').toLowerCase();
+  } catch {
+    return '';
+  }
+}
+
+function textMatchesSite(site, fields = []) {
+  const terms = siteTerms(site);
+  return terms.some(term => fields.some(field => String(field || '').toLowerCase().includes(term)));
+}
+
 function extractInviteCode(value = '') {
   const text = String(value);
   const direct = text.match(/\bTRV-[A-Z0-9]{6}\b/i);
@@ -465,7 +487,32 @@ $pidValue = 0
 [void][ForegroundWindow]::GetWindowThreadProcessId($hwnd, [ref]$pidValue)
 $processName = ""
 try { $processName = (Get-Process -Id $pidValue -ErrorAction Stop).ProcessName } catch {}
-[pscustomobject]@{ processName = $processName; title = $sb.ToString() } | ConvertTo-Json -Compress
+$detectedUrl = ""
+if ($processName -match '^(chrome|msedge|firefox|brave|opera)$') {
+  try {
+    Add-Type -AssemblyName UIAutomationClient
+    Add-Type -AssemblyName UIAutomationTypes
+    $root = [System.Windows.Automation.AutomationElement]::FromHandle($hwnd)
+    if ($root) {
+      $editCondition = [System.Windows.Automation.PropertyCondition]::new(
+        [System.Windows.Automation.AutomationElement]::ControlTypeProperty,
+        [System.Windows.Automation.ControlType]::Edit
+      )
+      $edits = $root.FindAll([System.Windows.Automation.TreeScope]::Descendants, $editCondition)
+      foreach ($edit in $edits) {
+        try {
+          $valuePattern = $edit.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern)
+          $value = [string]$valuePattern.Current.Value
+          if ($value -match '^(https?://|[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,})(/|$)') {
+            $detectedUrl = $value
+            break
+          }
+        } catch {}
+      }
+    }
+  } catch {}
+}
+[pscustomobject]@{ processName = $processName; title = $sb.ToString(); detectedUrl = $detectedUrl; timestamp = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() } | ConvertTo-Json -Compress
   `.trim();
 
   return new Promise((resolve) => {
@@ -474,39 +521,69 @@ try { $processName = (Get-Process -Id $pidValue -ErrorAction Stop).ProcessName }
       windowsHide: true
     }, (error, stdout) => {
       if (error || !stdout) return resolve(null);
-      try { resolve(JSON.parse(stdout)); } catch { resolve(null); }
+      try {
+        const parsed = JSON.parse(stdout);
+        const detectedUrl = normalizeUrl(parsed.detectedUrl);
+        const detectedHost = hostFromUrl(detectedUrl);
+        resolve({
+          processName: parsed.processName || '',
+          title: parsed.title || '',
+          detectedUrl,
+          detectedHost,
+          detectionSource: detectedHost ? 'url' : parsed.title ? 'title' : 'process',
+          timestamp: Number(parsed.timestamp) || Date.now()
+        });
+      } catch {
+        resolve(null);
+      }
     });
   });
 }
 
-function isForegroundAllowed(info, policy) {
-  if (!info || !info.processName) return true;
+function evaluateForegroundPolicy(info, policy) {
+  if (!info || !info.processName) return { allowed: true, detectionSource: 'process' };
 
   const processName = String(info.processName || '').toLowerCase();
-  const title = String(info.title || '').toLowerCase();
-  const combined = `${processName} ${title}`;
+  const title = String(info.title || info.windowTitle || '').toLowerCase();
+  const detectedUrl = String(info.detectedUrl || '').toLowerCase();
+  const detectedHost = String(info.detectedHost || hostFromUrl(info.detectedUrl)).toLowerCase();
+  const fields = [detectedHost, detectedUrl, title, processName];
   const ownNames = ['truveilsecure', 'electron'];
-  if (ownNames.some(name => processName.includes(name) || title.includes('truveil secure'))) return true;
+  if (ownNames.some(name => processName.includes(name) || title.includes('truveil secure'))) {
+    return { allowed: true, detectionSource: 'process' };
+  }
 
-  const blockedSite = (policy.blocked_sites || []).find(site => siteTerms(site).some(term => combined.includes(term)));
-  if (blockedSite) return false;
+  const blockedSite = (policy.blocked_sites || []).find(site => textMatchesSite(site, fields));
+  if (blockedSite) {
+    return {
+      allowed: false,
+      matchedRule: blockedSite,
+      detectionSource: detectedHost ? 'url' : title ? 'title' : 'process',
+      reason: 'Restricted website is blocked by this interview policy.'
+    };
+  }
 
   const appAllowed = policy.allowed_apps.some(app => {
     const clean = String(app).toLowerCase().replace(/\.exe$/, '');
     return clean && (processName.includes(clean) || title.includes(clean));
   });
-  if (appAllowed) return true;
+  if (appAllowed) return { allowed: true, detectionSource: 'process' };
 
-  return policy.allowed_sites.some(site => {
-    const clean = String(site).toLowerCase();
-    return clean && combined.includes(clean);
-  });
+  const allowedSite = policy.allowed_sites.some(site => textMatchesSite(site, fields));
+  if (allowedSite) return { allowed: true, detectionSource: detectedHost ? 'url' : 'title' };
+
+  return {
+    allowed: false,
+    matchedRule: 'unlisted app/site',
+    detectionSource: detectedHost ? 'url' : title ? 'title' : 'process',
+    reason: 'Foreground app or website is not allowed by this interview policy.'
+  };
 }
 
-async function warnAndRefocus(info, reason) {
+async function warnAndRefocus(info, decision = {}) {
   if (!activeSession || !mainWindow || mainWindow.isDestroyed()) return;
 
-  const key = `${info?.processName || ''}:${info?.title || ''}`;
+  const key = `${info?.processName || ''}:${info?.title || ''}:${info?.detectedHost || info?.detectedUrl || ''}`;
   if (key && key === lastBlockingKey) return;
   lastBlockingKey = key;
 
@@ -514,7 +591,11 @@ async function warnAndRefocus(info, reason) {
     severity: 'high',
     processName: info?.processName || 'Unknown app',
     windowTitle: info?.title || 'Unknown window',
-    reason
+    detectedUrl: info?.detectedUrl || '',
+    detectedHost: info?.detectedHost || '',
+    matchedRule: decision.matchedRule || '',
+    detectionSource: decision.detectionSource || info?.detectionSource || 'process',
+    reason: decision.reason || 'Foreground app or website is blocked by this interview policy.'
   };
 
   mainWindow.show();
@@ -532,11 +613,12 @@ function startPolicyMonitor() {
   policyScanInterval = setInterval(async () => {
     if (!monitoring || !activeSession?.policy) return;
     const info = await getForegroundWindowInfo();
-    if (!info || isForegroundAllowed(info, activeSession.policy)) {
+    const decision = evaluateForegroundPolicy(info, activeSession.policy);
+    if (!info || decision.allowed) {
       lastBlockingKey = null;
       return;
     }
-    await warnAndRefocus(info, 'Foreground app or website is blocked by this interview policy.');
+    await warnAndRefocus(info, decision);
   }, 2500);
 }
 
