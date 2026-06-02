@@ -101,7 +101,7 @@
         </div>
         <label class="consent-check">
           <input type="checkbox" id="sessionConsentInput">
-          <span>I consent to microphone transcription, focus monitoring, and recruiter-configured warning/refocus blocking during this interview.</span>
+          <span>I consent to microphone transcription, focus monitoring, and recruiter-configured restricted-site controls during this interview.</span>
         </label>
       </div>
 
@@ -154,8 +154,8 @@
           <div class="stat-val"><span class="s-dot"></span> Monitoring</div>
         </div>
         <div class="stat">
-          <div class="stat-label">INTEGRITY</div>
-          <div class="stat-val" id="integrity">100%</div>
+          <div class="stat-label">CONNECTION</div>
+          <div class="stat-val" id="connectionState">Secure</div>
         </div>
       </div>
 
@@ -178,8 +178,8 @@
 
       <div class="session-cockpit">
         <div><span>Approved tools</span><strong>Zoom · Meet · Teams</strong></div>
-        <div><span>Hard block v1</span><strong>Warn + refocus</strong></div>
-        <div><span>Fallback</span><strong>Admin-side audio transcription</strong></div>
+        <div><span>Focus</span><strong>Stay in session</strong></div>
+        <div><span>Transcript</span><strong>Live relay</strong></div>
       </div>
 
       <div class="flag-feed" id="flagFeed">
@@ -192,8 +192,8 @@
       </div>
 
       <div class="blocking-banner" id="blockingBanner" hidden>
-        <strong>Disallowed app or tab detected</strong>
-        <span id="blockingDetail">Return to your approved interview tools.</span>
+        <strong>Restricted site closed</strong>
+        <span id="blockingDetail">Return to your interview call.</span>
       </div>
 
       <div class="session-actions">
@@ -213,7 +213,7 @@
       </div>
       <div class="trust-badge ok"><span class="dot"></span>SESSION COMPLETE</div>
       <h2>Thank you</h2>
-      <p class="sub">Your secure session has ended. Your recruiter has the integrity report. You can close this window now.</p>
+      <p class="sub">Your secure session has ended. Your recruiter has the session summary. You can close this window now.</p>
       <div class="ended-actions">
         <button class="btn btn-primary" id="quitBtn">Close Truveil Secure</button>
       </div>

@@ -728,3 +728,65 @@ h2 { font-size: 28px; }
   .code-flow,
   .session-cockpit { grid-template-columns: 1fr; }
 }
+
+#active-screen {
+  padding: 24px;
+}
+
+#active-screen.active {
+  align-items: stretch;
+}
+
+#active-screen .session-card {
+  width: min(1280px, 100%);
+  max-width: none;
+  min-height: calc(100vh - 92px);
+  padding: 34px 42px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+#active-screen .shield-area {
+  width: 150px;
+  height: 150px;
+  margin: 4px auto 20px;
+}
+
+#active-screen h2 {
+  font-size: clamp(30px, 4vw, 54px);
+  letter-spacing: -2px;
+}
+
+#active-screen .sub {
+  max-width: 720px;
+  font-size: 16px;
+  margin-bottom: 24px;
+}
+
+#active-screen .stats-row,
+#active-screen .session-cockpit {
+  max-width: 900px;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#active-screen .audio-panel,
+#active-screen .flag-feed,
+#active-screen .blocking-banner {
+  max-width: 900px;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#active-screen .mic-waveform {
+  height: 78px;
+  gap: 6px;
+}
+
+#active-screen .flag-feed {
+  min-height: 76px;
+  max-height: 100px;
+}

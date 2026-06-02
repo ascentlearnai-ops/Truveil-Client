@@ -604,6 +604,31 @@ function evaluateForegroundPolicy(info, policy) {
   };
 }
 
+function isBrowserProcess(processName = '') {
+  return /^(chrome|msedge|firefox|brave|opera)$/i.test(String(processName || '').trim());
+}
+
+function closeForegroundRestrictedTarget(info = {}, decision = {}) {
+  if (process.platform !== 'win32') return Promise.resolve(false);
+  const hasRestrictedSite = Boolean(info.detectedHost || info.detectedUrl);
+  const matchedRule = String(decision.matchedRule || '').toLowerCase();
+  const isUnlisted = matchedRule === 'unlisted app/site';
+  if (!hasRestrictedSite || isUnlisted || !isBrowserProcess(info.processName)) return Promise.resolve(false);
+
+  const psScript = `
+Add-Type -AssemblyName System.Windows.Forms
+[System.Windows.Forms.SendKeys]::SendWait('^w')
+Start-Sleep -Milliseconds 180
+  `.trim();
+
+  return new Promise((resolve) => {
+    execFile('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', psScript], {
+      timeout: 1500,
+      windowsHide: true
+    }, (error) => resolve(!error));
+  });
+}
+
 async function warnAndRefocus(info, decision = {}) {
   if (!activeSession || !mainWindow || mainWindow.isDestroyed()) return;
 
@@ -611,6 +636,7 @@ async function warnAndRefocus(info, decision = {}) {
   if (key && key === lastBlockingKey) return;
   lastBlockingKey = key;
 
+  const closedRestrictedTarget = await closeForegroundRestrictedTarget(info, decision);
   const payload = {
     severity: 'high',
     processName: info?.processName || 'Unknown app',
@@ -619,6 +645,7 @@ async function warnAndRefocus(info, decision = {}) {
     detectedHost: info?.detectedHost || '',
     matchedRule: decision.matchedRule || '',
     detectionSource: decision.detectionSource || info?.detectionSource || 'process',
+    closedRestrictedTarget,
     reason: decision.reason || 'Foreground app or website is blocked by this interview policy.'
   };
 
@@ -673,6 +700,9 @@ function stopOverlayScanner() {
 async function cleanupSession({ remote = false, quit = false, status = 'interrupted' } = {}) {
   const sessionToClose = activeSession;
   monitoring = false;
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    try { mainWindow.setFullScreen(false); } catch {}
+  }
 
   try { globalShortcut.unregisterAll(); } catch {}
   stopPolicyMonitor();
@@ -769,6 +799,11 @@ ipcMain.handle('session:start', async (_, { sessionCode, candidateName }) => {
     await joinRealtimeSession(normalizedCode);
 
     monitoring = true;
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.setFullScreen(true);
+      mainWindow.show();
+      mainWindow.focus();
+    }
     try { blocker = powerSaveBlocker.start('prevent-display-sleep'); } catch {}
     try { registerSessionShortcuts(); } catch {}
     startPolicyMonitor();

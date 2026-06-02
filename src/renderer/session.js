@@ -1,8 +1,8 @@
 // Truveil Secure - Candidate Renderer
 const $ = id => document.getElementById(id);
-const AUDIO_SEGMENT_MS = 12000;
-const TRANSCRIPT_BATCH_MS = 12000;
-const TRANSCRIPT_BATCH_MAX_WORDS = 70;
+const AUDIO_SEGMENT_MS = 10000;
+const TRANSCRIPT_BATCH_MS = 1800;
+const TRANSCRIPT_BATCH_MAX_WORDS = 28;
 const SPEECH_RMS_THRESHOLD = 0.012;
 const SPEECH_PEAK_THRESHOLD = 0.06;
 
@@ -19,7 +19,6 @@ function showScreen(name) {
 
 let sessionStart = null;
 let timerInterval = null;
-let integrity = 100;
 let audioStream = null;
 let sessionEnding = false;
 let audioContext = null;
@@ -122,7 +121,7 @@ async function startSession() {
   }
 
   if (!sessionConsentInput.checked) {
-    toast('Please consent to monitoring and warning/refocus blocking to start.', 'error');
+    toast('Please consent to monitoring and restricted-site controls to start.', 'error');
     sessionConsentInput.focus();
     return;
   }
@@ -193,13 +192,13 @@ function updateAudioUi({ rms = lastRms, peak = lastPeak, status } = {}) {
   if (uploadStatusEl) {
     if (audioFallbackActive) {
       uploadStatusEl.textContent = pendingAudioUploads
-        ? `${pendingAudioUploads} audio segment${pendingAudioUploads === 1 ? '' : 's'} uploading for admin transcription`
-        : 'Cloud transcript relay active - raw audio is deleted after processing';
+        ? `${pendingAudioUploads} voice segment${pendingAudioUploads === 1 ? '' : 's'} syncing`
+        : 'Voice relay active';
       uploadStatusEl.className = pendingAudioUploads ? 'audio-status busy' : 'audio-status ok';
     } else {
       uploadStatusEl.textContent = transcriptFailures
         ? `${transcriptFailures} transcript send issue${transcriptFailures === 1 ? '' : 's'} detected`
-        : 'Transcript relay healthy';
+        : 'Live transcript relay active';
       uploadStatusEl.className = transcriptFailures ? 'audio-status error' : 'audio-status ok';
     }
   }
@@ -372,7 +371,7 @@ async function uploadFallbackAudioBlob(blob, sequence, startedAt, stats = {}, at
 function startAudioFallback(reason = 'cloud transcription primary') {
   if (audioFallbackActive || sessionEnding) return;
   if (!window.MediaRecorder || !window.truveil.uploadAudioChunk) {
-    logEvent('Cloud audio transcription is unavailable in this build', 'warn');
+    logEvent('Voice fallback unavailable in this build', 'warn', { visible: false });
     updateAudioUi({ status: 'Transcript unavailable' });
     return;
   }
@@ -391,8 +390,8 @@ function startAudioFallback(reason = 'cloud transcription primary') {
 
   lastAudioChunkAt = Date.now();
 
-  logEvent(`Cloud transcript relay started: ${reason}`, 'info');
-  updateAudioUi({ status: 'Recording 12s segments' });
+  logEvent(`Voice fallback started: ${reason}`, 'info', { visible: false });
+  updateAudioUi({ status: 'Voice relay active' });
   startFallbackRecorderSegment();
 }
 
@@ -427,7 +426,7 @@ function startFallbackRecorderSegment() {
   };
   recorder.onstart = () => {
     lastAudioChunkAt = startedAt;
-    updateAudioUi({ status: 'Recording 12s segment' });
+    updateAudioUi({ status: 'Syncing voice segment' });
   };
   recorder.onstop = () => {
     if (activeSegmentStats === segmentStats) activeSegmentStats = null;
@@ -453,7 +452,7 @@ function startFallbackRecorderSegment() {
   try {
     recorder.start();
     clearTimeout(audioFallbackSegmentTimer);
-    updateAudioUi({ status: 'Recording 12s audio segment' });
+    updateAudioUi({ status: 'Syncing voice segment' });
     audioFallbackSegmentTimer = setTimeout(() => {
       try {
         if (recorder.state === 'recording') {
@@ -501,7 +500,11 @@ function startTranscriptStreaming() {
   transcriptStartedAt = Date.now();
   updateAudioUi({ status: 'Starting' });
   startAudioMeter();
-  startAudioFallback('12-second cloud transcription segments');
+  startWebSpeechUiOnly();
+  startTranscriptWatchdog();
+  if (!getSpeechRecognitionCtor()) {
+    startAudioFallback('live transcript unavailable');
+  }
 }
 
 function startWebSpeechUiOnly() {
@@ -513,8 +516,8 @@ function startWebSpeechUiOnly() {
   recognition.lang = 'en-US';
 
   recognition.onstart = () => {
-    logEvent('Live transcript relay started.', 'info');
-    updateAudioUi({ status: 'Listening' });
+    logEvent('Live transcript relay started.', 'info', { visible: false });
+    updateAudioUi({ status: 'Live transcript active' });
   };
 
   recognition.onresult = (event) => {
@@ -535,7 +538,7 @@ function startWebSpeechUiOnly() {
   recognition.onerror = (event) => {
     const error = event.error || 'speech recognition error';
     const serious = error === 'not-allowed' || error === 'service-not-allowed';
-    logEvent(`Transcript engine warning: ${error}`, serious ? 'warn' : 'info');
+    logEvent(`Transcript engine warning: ${error}`, serious ? 'warn' : 'info', { visible: false });
     if (error === 'network' || error === 'audio-capture') {
       recognitionNetworkFailures++;
       if (recognitionNetworkFailures >= 1) startAudioFallback(error);
@@ -599,12 +602,10 @@ function startTimer() {
   }, 1000);
 }
 
-function logEvent(text, kind = 'warn') {
+function logEvent(text, kind = 'warn', options = {}) {
+  if (options.visible === false) return;
   const feed = $('flagFeed');
   if (feed.querySelector('.ff-empty')) feed.innerHTML = '';
-
-  if (kind === 'warn') integrity = Math.max(0, integrity - 5);
-  $('integrity').textContent = integrity + '%';
 
   const el = document.createElement('div');
   el.className = 'ff-item';
@@ -619,11 +620,11 @@ function renderPolicy(policy = {}) {
   if (!summary || !text) return;
 
   if (!blocked.length) {
-    text.textContent = 'No recruiter-blocked websites were sent for this session.';
+    text.textContent = '';
   } else {
-    text.textContent = blocked.join(', ');
+    text.textContent = '';
   }
-  summary.hidden = false;
+  summary.hidden = true;
 }
 
 async function finishSession(message) {
@@ -640,8 +641,7 @@ async function finishSession(message) {
 
 window.truveil.onFocusLost(() => {
   if (!sessionStart) return;
-  logEvent('You switched away from Truveil Secure');
-  setStatus('warn', 'Focus lost');
+  setStatus('warn', 'Return to session');
 });
 
 window.truveil.onFocusGained(() => {
@@ -651,7 +651,7 @@ window.truveil.onFocusGained(() => {
 
 window.truveil.onShortcutBlocked(() => {
   if (!sessionStart) return;
-  logEvent('Blocked a close/minimize shortcut');
+  setStatus('warn', 'Session protected');
 });
 
 window.truveil.onBlockingWarning((warning = {}) => {
@@ -660,23 +660,22 @@ window.truveil.onBlockingWarning((warning = {}) => {
   const title = warning.windowTitle || 'Unknown window';
   const detectedHost = warning.detectedHost || '';
   const detectedUrl = warning.detectedUrl || '';
-  const matchedRule = warning.matchedRule ? ` · rule: ${warning.matchedRule}` : '';
   const target = detectedHost
-    ? `Restricted site detected: ${detectedHost}`
+    ? `Opened ${detectedHost}`
     : detectedUrl
-      ? `Restricted site detected: ${detectedUrl}`
-      : `Disallowed app detected: ${processName} - ${title}`;
+      ? `Opened ${detectedUrl}`
+      : `Opened ${processName} - ${title}`;
   const banner = $('blockingBanner');
-  $('blockingDetail').textContent = `${target}${matchedRule}`;
+  $('blockingDetail').textContent = target;
   banner.hidden = false;
   setTimeout(() => { banner.hidden = true; }, 6000);
-  logEvent(detectedHost ? `Restricted site detected: ${detectedHost}` : `Disallowed app detected: ${processName}`, 'warn');
-  setStatus('warn', 'Action required');
+  logEvent(detectedHost ? `Opened ${detectedHost}` : `Opened ${processName}`, 'warn');
+  setStatus('warn', 'Restricted site closed');
 });
 
 window.truveil.onSessionPolicyUpdated((policy = {}) => {
   renderPolicy(policy);
-  logEvent('Recruiter website policy synced', 'info');
+  logEvent('Interview policy synced', 'info', { visible: false });
 });
 
 window.truveil.onRemoteSessionEnded(() => {
