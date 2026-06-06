@@ -11,6 +11,7 @@ files:
   - preload.js
   - package.json
   - src/config/runtime-config.json
+  - src/lockdown/**/*
   - src/renderer/**/*
 mac:
   category: public.app-category.business
