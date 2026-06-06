@@ -207,14 +207,6 @@
         target.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
     });
-
-    document.querySelectorAll('.rail div, .privacy-card, .policy-strip span, .screen-window, .download-button').forEach(card => {
-      card.addEventListener('pointermove', event => {
-        const rect = card.getBoundingClientRect();
-        card.style.setProperty('--mx', `${event.clientX - rect.left}px`);
-        card.style.setProperty('--my', `${event.clientY - rect.top}px`);
-      });
-    });
   </script>
 </body>
 </html>
