@@ -1,8 +1,8 @@
 // Truveil Secure - Candidate Renderer
 const $ = id => document.getElementById(id);
 const AUDIO_SEGMENT_MS = 10000;
-const TRANSCRIPT_BATCH_MS = 1800;
-const TRANSCRIPT_BATCH_MAX_WORDS = 28;
+const TRANSCRIPT_BATCH_MS = 900;
+const TRANSCRIPT_BATCH_MAX_WORDS = 16;
 const SPEECH_RMS_THRESHOLD = 0.012;
 const SPEECH_PEAK_THRESHOLD = 0.06;
 
@@ -46,6 +46,8 @@ let lastRms = 0;
 let lastPeak = 0;
 let lastSpeechLevelAt = 0;
 let lastFinalTranscriptAt = 0;
+let lastInterimSentAt = 0;
+let lastInterimText = '';
 let activeSegmentStats = null;
 
 const statusPill = $('statusPill');
@@ -290,6 +292,24 @@ async function sendTranscriptText(text) {
   scheduleTranscriptFlush();
 }
 
+function sendInterimTranscript(text) {
+  const cleanText = String(text || '').replace(/\s+/g, ' ').trim();
+  const now = Date.now();
+  if (!cleanText || cleanText.length < 4 || sessionEnding) return;
+  if (now - lastInterimSentAt < 550 && cleanText.length < lastInterimText.length + 8) return;
+  if (cleanText === lastInterimText) return;
+  lastInterimSentAt = now;
+  lastInterimText = cleanText;
+  window.truveil.sendTranscript({
+    text: cleanText,
+    timestamp: now,
+    durationMs: 0,
+    sequence: transcriptSequence,
+    source: 'candidate-web-speech-interim',
+    interim: true
+  }).catch(() => {});
+}
+
 async function flushTranscriptBuffer() {
   if (!transcriptBuffer.length) return;
   const cleanText = transcriptBuffer.join(' ').replace(/\s+/g, ' ').trim();
@@ -493,6 +513,8 @@ function startTranscriptStreaming() {
   recognitionNetworkFailures = 0;
   lastSpeechLevelAt = 0;
   lastFinalTranscriptAt = 0;
+  lastInterimSentAt = 0;
+  lastInterimText = '';
   transcriptBuffer = [];
   transcriptBufferStartedAt = 0;
   clearTimeout(transcriptFlushTimer);
@@ -531,6 +553,7 @@ function startWebSpeechUiOnly() {
     if (interimText) {
       lastSpeechLevelAt = Date.now();
       updateAudioUi({ status: 'Hearing speech' });
+      sendInterimTranscript(interimText);
     }
     if (finalText) sendTranscriptText(finalText);
   };

@@ -326,7 +326,7 @@ async function publishCandidateEvent(type, metadata = {}) {
   }
 }
 
-async function publishCandidateTranscript({ text, timestamp, durationMs, sequence, source }) {
+async function publishCandidateTranscript({ text, timestamp, durationMs, sequence, source, interim }) {
   if (!activeSession || !realtimeChannel) return { ok: false, error: 'No active realtime session.' };
 
   const cleanText = String(text || '').trim();
@@ -340,7 +340,8 @@ async function publishCandidateTranscript({ text, timestamp, durationMs, sequenc
     timestamp: timestamp || Date.now(),
     durationMs: Math.max(0, Math.round(Number(durationMs) || 0)),
     sequence: Number.isFinite(Number(sequence)) ? Math.max(0, Number(sequence)) : undefined,
-    source: source || 'candidate-transcript'
+    source: source || 'candidate-transcript',
+    interim: Boolean(interim)
   };
 
   try {
@@ -610,10 +611,10 @@ function isBrowserProcess(processName = '') {
 
 function closeForegroundRestrictedTarget(info = {}, decision = {}) {
   if (process.platform !== 'win32') return Promise.resolve(false);
-  const hasRestrictedSite = Boolean(info.detectedHost || info.detectedUrl);
   const matchedRule = String(decision.matchedRule || '').toLowerCase();
   const isUnlisted = matchedRule === 'unlisted app/site';
-  if (!hasRestrictedSite || isUnlisted || !isBrowserProcess(info.processName)) return Promise.resolve(false);
+  const hasRestrictedTarget = Boolean(info.detectedHost || info.detectedUrl || (matchedRule && !isUnlisted));
+  if (!hasRestrictedTarget || isUnlisted || !isBrowserProcess(info.processName)) return Promise.resolve(false);
 
   const psScript = `
 Add-Type -AssemblyName System.Windows.Forms
@@ -670,7 +671,7 @@ function startPolicyMonitor() {
       return;
     }
     await warnAndRefocus(info, decision);
-  }, 2500);
+  }, 1000);
 }
 
 function stopPolicyMonitor() {
