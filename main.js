@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, globalShortcut, powerSaveBlocker, screen } = require('electron');
+const { app, BrowserWindow, ipcMain, globalShortcut, powerSaveBlocker, screen, shell } = require('electron');
 const path = require('path');
 const { execFile } = require('child_process');
 const { createClient } = require('@supabase/supabase-js');
@@ -15,6 +15,8 @@ let realtimeChannel = null;
 let pendingInviteCode = null;
 let policyScanInterval = null;
 let lastBlockingKey = null;
+let lastForegroundKey = null;
+let lastClosedTarget = null;
 
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -280,6 +282,11 @@ async function joinRealtimeSession(sessionCode) {
       if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.webContents.send('session-policy-updated', activeSession.policy);
       }
+    })
+    .on('broadcast', { event: 'recruiter_action' }, ({ payload }) => {
+      handleRecruiterAction(payload || {}).catch((err) => {
+        console.warn('[Truveil] recruiter action failed:', err.message);
+      });
     })
     .on(
       'postgres_changes',
@@ -609,6 +616,32 @@ function isBrowserProcess(processName = '') {
   return /^(chrome|msedge|firefox|brave|opera)$/i.test(String(processName || '').trim());
 }
 
+function foregroundKey(info = {}) {
+  return [
+    info.processName || '',
+    info.detectedHost || info.detectedUrl || '',
+    info.title || info.windowTitle || ''
+  ].join(':').toLowerCase();
+}
+
+function targetMatchesInfo(target = {}, info = {}) {
+  const values = [
+    info.processName,
+    info.title,
+    info.windowTitle,
+    info.detectedHost,
+    info.detectedUrl
+  ].filter(Boolean).map(value => String(value).toLowerCase());
+  const requested = [
+    target.processName,
+    target.windowTitle,
+    target.detectedHost,
+    target.detectedUrl,
+    target.matchedRule
+  ].filter(Boolean).map(value => String(value).toLowerCase());
+  return requested.some(value => values.some(field => field.includes(value) || value.includes(field)));
+}
+
 function closeForegroundRestrictedTarget(info = {}, decision = {}) {
   if (process.platform !== 'win32') return Promise.resolve(false);
   const matchedRule = String(decision.matchedRule || '').toLowerCase();
@@ -638,6 +671,7 @@ async function warnAndRefocus(info, decision = {}) {
   lastBlockingKey = key;
 
   const closedRestrictedTarget = await closeForegroundRestrictedTarget(info, decision);
+  if (closedRestrictedTarget) lastClosedTarget = { ...info, closedAt: Date.now() };
   const payload = {
     severity: 'high',
     processName: info?.processName || 'Unknown app',
@@ -660,13 +694,78 @@ async function warnAndRefocus(info, decision = {}) {
   await publishCandidateEvent('blocking_warning', payload);
 }
 
+async function handleRecruiterAction(payload = {}) {
+  if (!activeSession || payload.sessionId !== activeSession.sessionCode) return;
+  const action = String(payload.action || '');
+  const target = payload.target || {};
+
+  if (action === 'allow_target') {
+    const policy = normalizePolicy(activeSession.policy);
+    const host = String(target.detectedHost || hostFromUrl(target.detectedUrl) || '').trim();
+    const processName = String(target.processName || '').trim();
+    if (host && !policy.allowed_sites.includes(host)) policy.allowed_sites.push(host);
+    if (host) policy.blocked_sites = policy.blocked_sites.filter(item => !textMatchesSite(item, [host]));
+    if (!host && processName && !policy.allowed_apps.includes(processName)) policy.allowed_apps.push(processName);
+    activeSession.policy = policy;
+    mainWindow?.webContents.send('session-policy-updated', policy);
+    await publishCandidateEvent('recruiter_allowed_target', { severity: 'low', ...target });
+    return;
+  }
+
+  if (action === 'reopen_target') {
+    const url = normalizeUrl(target.detectedUrl || target.detectedHost || lastClosedTarget?.detectedUrl || lastClosedTarget?.detectedHost);
+    if (url) {
+      await shell.openExternal(url);
+      await publishCandidateEvent('recruiter_reopened_target', { severity: 'low', ...target, detectedUrl: url });
+    }
+    return;
+  }
+
+  if (action === 'close_target') {
+    const info = await getForegroundWindowInfo();
+    if (!info || !targetMatchesInfo(target, info)) {
+      await publishCandidateEvent('recruiter_close_target_missed', { severity: 'low', ...target });
+      return;
+    }
+    const closed = await closeForegroundRestrictedTarget(info, {
+      matchedRule: target.matchedRule || target.detectedHost || 'recruiter request'
+    });
+    if (closed) lastClosedTarget = { ...info, closedAt: Date.now() };
+    mainWindow.show();
+    mainWindow.focus();
+    await publishCandidateEvent('recruiter_closed_target', {
+      severity: 'medium',
+      ...info,
+      windowTitle: info.title,
+      closedRestrictedTarget: closed
+    });
+  }
+}
+
 function startPolicyMonitor() {
   stopPolicyMonitor();
   policyScanInterval = setInterval(async () => {
     if (!monitoring || !activeSession?.policy) return;
     const info = await getForegroundWindowInfo();
     const decision = evaluateForegroundPolicy(info, activeSession.policy);
-    if (!info || decision.allowed) {
+    if (!info) return;
+
+    const key = foregroundKey(info);
+    if (key && key !== lastForegroundKey) {
+      lastForegroundKey = key;
+      await publishCandidateEvent('foreground_changed', {
+        severity: decision.allowed ? 'low' : 'medium',
+        processName: info.processName || 'Unknown app',
+        windowTitle: info.title || 'Unknown window',
+        detectedUrl: info.detectedUrl || '',
+        detectedHost: info.detectedHost || '',
+        matchedRule: decision.matchedRule || '',
+        detectionSource: decision.detectionSource || info.detectionSource || 'process',
+        policyDecision: decision.allowed ? 'observed' : 'restricted'
+      });
+    }
+
+    if (decision.allowed) {
       lastBlockingKey = null;
       return;
     }
@@ -678,6 +777,7 @@ function stopPolicyMonitor() {
   if (policyScanInterval) clearInterval(policyScanInterval);
   policyScanInterval = null;
   lastBlockingKey = null;
+  lastForegroundKey = null;
 }
 
 function startOverlayScanner() {
@@ -687,9 +787,11 @@ function startOverlayScanner() {
       severity: detection.severity || 'critical',
       processName: 'hidden-overlay',
       windowTitle: detection.windowTitle || 'Unknown hidden window',
+      processId: detection.processId || 0,
       matchedRule: detection.type || 'hidden overlay',
       detectionSource: 'screen-capture-affinity',
-      reason: detection.flag?.detail || 'Hidden overlay or screen-capture-excluded window detected.'
+      reason: detection.flag?.detail || 'Hidden overlay or screen-capture-excluded window detected.',
+      captureAffinity: detection.captureAffinity || 0
     });
   });
 }

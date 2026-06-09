@@ -45,6 +45,8 @@ public class WinDetect {
   [DllImport("user32.dll")]
   public static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int count);
   [DllImport("user32.dll")]
+  public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
+  [DllImport("user32.dll")]
   public static extern bool IsWindowVisible(IntPtr hWnd);
   public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
   public static List<string> GetHiddenWindows() {
@@ -56,7 +58,9 @@ public class WinDetect {
       if (affinity == 0x11 || affinity == 0x13) {
         var sb = new StringBuilder(256);
         GetWindowText(hwnd, sb, 256);
-        results.Add(sb.ToString());
+        uint processId = 0;
+        GetWindowThreadProcessId(hwnd, out processId);
+        results.Add(processId.ToString() + ":::" + affinity.ToString() + ":::" + sb.ToString());
       }
       return true;
     }, IntPtr.Zero);
@@ -75,11 +79,16 @@ Add-Type -TypeDefinition $code
       }).toString().trim();
 
       if (result) {
-        return result.split('|||').filter(Boolean).map(title => ({
+        return result.split('|||').filter(Boolean).map(raw => {
+          const [pid, affinity, ...titleParts] = raw.split(':::');
+          return {
           type: 'WDA_EXCLUDEFROMCAPTURE',
-          windowTitle: title,
+          processId: Number(pid) || 0,
+          captureAffinity: Number(affinity) || 0,
+          windowTitle: titleParts.join(':::') || 'Untitled hidden window',
           severity: 'critical'
-        }));
+          };
+        });
       }
     } catch (err) {
       console.error('[Scanner] Windows scan error:', err.message);
