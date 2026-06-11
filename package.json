@@ -5,6 +5,8 @@
   "main": "main.js",
   "author": "Truveil Inc.",
   "scripts": {
+    "test": "node --test test/*.test.js",
+    "check": "node --check main.js && node --check preload.js && node --check src/renderer/session.js",
     "prestart": "node scripts/write-runtime-config.js",
     "start": "electron .",
     "prebuild:mac": "node scripts/write-runtime-config.js --production",
@@ -18,7 +20,7 @@
     "ws": "^8.21.0"
   },
   "devDependencies": {
-    "electron": "^28.2.0",
+    "electron": "^31.7.7",
     "electron-builder": "^24.9.1"
   }
 }

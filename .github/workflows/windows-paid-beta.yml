@@ -1,0 +1,48 @@
+name: Windows paid beta checks
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  candidate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run check
+      - run: npm run build:win -- --config.win.signAndEditExecutable=true
+        env:
+          TRUVEIL_SUPABASE_URL: ${{ secrets.TRUVEIL_SUPABASE_URL }}
+          TRUVEIL_SUPABASE_ANON_KEY: ${{ secrets.TRUVEIL_SUPABASE_ANON_KEY }}
+          CSC_LINK: ${{ secrets.WINDOWS_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CSC_KEY_PASSWORD }}
+      - name: Generate SHA-256 checksum
+        shell: pwsh
+        run: |
+          $file = Get-ChildItem dist/TruveilSecure-Setup-*.exe | Select-Object -First 1
+          "$(Get-FileHash $file.FullName -Algorithm SHA256 | Select-Object -ExpandProperty Hash)  $($file.Name)" |
+            Set-Content "$($file.FullName).sha256"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: truveil-secure-windows
+          path: |
+            dist/TruveilSecure-Setup-*.exe
+            dist/TruveilSecure-Setup-*.exe.sha256
+      - uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          files: |
+            dist/TruveilSecure-Setup-*.exe
+            dist/TruveilSecure-Setup-*.exe.sha256

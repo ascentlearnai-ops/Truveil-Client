@@ -10,6 +10,7 @@ files:
   - main.js
   - preload.js
   - package.json
+  - assets/**/*
   - src/config/runtime-config.json
   - src/lockdown/**/*
   - src/renderer/**/*
@@ -18,6 +19,7 @@ mac:
   target:
     - dmg
 win:
+  icon: assets/truveil.ico
   target:
     - nsis
   artifactName: TruveilSecure-Setup-${version}.${ext}

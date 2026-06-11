@@ -148,10 +148,12 @@ function sendInviteCode(code = pendingInviteCode) {
 }
 
 function getConfig() {
+  const supabaseUrl = runtimeConfig.supabaseUrl || process.env.TRUVEIL_SUPABASE_URL || '';
   return {
     apiBaseUrl: runtimeConfig.apiBaseUrl || process.env.TRUVEIL_API_BASE_URL || 'http://localhost:3001',
-    supabaseUrl: runtimeConfig.supabaseUrl || process.env.TRUVEIL_SUPABASE_URL || '',
-    supabaseAnonKey: runtimeConfig.supabaseAnonKey || process.env.TRUVEIL_SUPABASE_ANON_KEY || ''
+    supabaseUrl,
+    supabaseAnonKey: runtimeConfig.supabaseAnonKey || process.env.TRUVEIL_SUPABASE_ANON_KEY || '',
+    functionsBaseUrl: supabaseUrl ? `${supabaseUrl.replace(/\/+$/, '')}/functions/v1` : ''
   };
 }
 
@@ -230,7 +232,32 @@ async function fetchSessionFromApi(sessionCode) {
   return response.json();
 }
 
-async function validateSession(sessionCode) {
+async function joinSessionThroughFunction(sessionCode, candidateName) {
+  const { functionsBaseUrl, supabaseAnonKey } = getConfig();
+  if (!functionsBaseUrl || !supabaseAnonKey) return null;
+  const response = await fetch(`${functionsBaseUrl}/candidate-join`, {
+    method: 'POST',
+    headers: {
+      apikey: supabaseAnonKey,
+      authorization: `Bearer ${supabaseAnonKey}`,
+      'content-type': 'application/json'
+    },
+    body: JSON.stringify({ joinCode: sessionCode, candidateName })
+  });
+  if (response.status === 404) return null;
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(body.error || `Session join failed (${response.status})`);
+  return body;
+}
+
+async function validateSession(sessionCode, candidateName) {
+  try {
+    const joined = await joinSessionThroughFunction(sessionCode, candidateName);
+    if (joined?.session) return { ...joined.session, sessionToken: joined.sessionToken, secureJoin: true };
+  } catch (err) {
+    console.warn('[Truveil] secure session join unavailable:', err.message);
+  }
+
   const client = getSupabase();
   if (client) {
     const withPolicy = await client
@@ -333,7 +360,7 @@ async function publishCandidateEvent(type, metadata = {}) {
   }
 }
 
-async function publishCandidateTranscript({ text, timestamp, durationMs, sequence, source, interim }) {
+async function publishCandidateTranscript({ text, timestamp, durationMs, sequence, source, interim, transcriptConfidence }) {
   if (!activeSession || !realtimeChannel) return { ok: false, error: 'No active realtime session.' };
 
   const cleanText = String(text || '').trim();
@@ -348,7 +375,8 @@ async function publishCandidateTranscript({ text, timestamp, durationMs, sequenc
     durationMs: Math.max(0, Math.round(Number(durationMs) || 0)),
     sequence: Number.isFinite(Number(sequence)) ? Math.max(0, Number(sequence)) : undefined,
     source: source || 'candidate-transcript',
-    interim: Boolean(interim)
+    interim: Boolean(interim),
+    transcriptConfidence: Number.isFinite(Number(transcriptConfidence)) ? Number(transcriptConfidence) : undefined
   };
 
   try {
@@ -401,6 +429,39 @@ async function uploadCandidateAudioChunk(data = {}) {
     return { ok: false, error: 'Unsupported audio chunk payload.' };
   }
   if (buffer.byteLength < 128) return { ok: true, skipped: true };
+
+  if (activeSession.sessionToken) {
+    const { functionsBaseUrl, supabaseAnonKey } = getConfig();
+    try {
+      const response = await fetch(`${functionsBaseUrl}/transcribe-chunk`, {
+        method: 'POST',
+        headers: {
+          apikey: supabaseAnonKey,
+          authorization: `Bearer ${supabaseAnonKey}`,
+          'x-session-token': activeSession.sessionToken,
+          'content-type': String(data.mimeType || 'audio/webm').split(';')[0]
+        },
+        body: buffer
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || `Fallback transcription failed (${response.status})`);
+      if (result.text) {
+        await publishCandidateTranscript({
+          text: result.text,
+          timestamp: data.timestamp || Date.now(),
+          durationMs: data.durationMs,
+          sequence: data.sequence,
+          source: result.source || 'secure-chunk-fallback',
+          transcriptConfidence: result.confidence
+        });
+      }
+      return { ok: true, skipped: !result.text, source: result.source || 'secure-chunk-fallback' };
+    } catch (err) {
+      console.warn('[Truveil] secure fallback transcription failed:', err.message);
+      await publishCandidateEvent('audio_upload_failed', { severity: 'medium', error: err.message });
+      return { ok: false, error: err.message };
+    }
+  }
 
   const sequence = Math.max(0, Number(data.sequence) || 0);
   const timestamp = data.timestamp || Date.now();
@@ -890,7 +951,7 @@ ipcMain.handle('session:start', async (_, { sessionCode, candidateName }) => {
   const normalizedName = (candidateName || '').trim();
 
   try {
-    const session = await validateSession(normalizedCode);
+    const session = await validateSession(normalizedCode, normalizedName);
     if (!session) {
       return { ok: false, error: 'Session not found. Check the code your recruiter sent you.' };
     }
@@ -898,7 +959,15 @@ ipcMain.handle('session:start', async (_, { sessionCode, candidateName }) => {
       return { ok: false, error: 'This interview session has already ended.' };
     }
 
-    activeSession = { sessionCode: normalizedCode, candidateName: normalizedName, policy: normalizePolicy(session) };
+    const { functionsBaseUrl } = getConfig();
+    activeSession = {
+      sessionCode: normalizedCode,
+      candidateName: normalizedName,
+      policy: normalizePolicy(session),
+      sessionToken: session.sessionToken || '',
+      internalId: session.internal_id || '',
+      secureJoin: Boolean(session.secureJoin)
+    };
     await joinRealtimeSession(normalizedCode);
 
     monitoring = true;
@@ -915,7 +984,17 @@ ipcMain.handle('session:start', async (_, { sessionCode, candidateName }) => {
     await updateSessionStatus('active');
     await publishCandidateEvent('candidate_connected', { severity: 'low' });
 
-    return { ok: true, sessionCode: normalizedCode, candidateName: normalizedName, policy: activeSession.policy };
+    const transcriptionWebsocketUrl = activeSession.sessionToken && functionsBaseUrl
+      ? `${functionsBaseUrl.replace(/^http/i, 'ws')}/transcribe-live?token=${encodeURIComponent(activeSession.sessionToken)}`
+      : '';
+    return {
+      ok: true,
+      sessionCode: normalizedCode,
+      candidateName: normalizedName,
+      policy: activeSession.policy,
+      secureJoin: activeSession.secureJoin,
+      transcriptionWebsocketUrl
+    };
   } catch (err) {
     await cleanupSession();
     return { ok: false, error: err.message || 'Could not start session.' };

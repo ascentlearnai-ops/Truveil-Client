@@ -49,6 +49,11 @@ let lastFinalTranscriptAt = 0;
 let lastInterimSentAt = 0;
 let lastInterimText = '';
 let activeSegmentStats = null;
+let liveTranscriptionSocket = null;
+let liveStreamRecorder = null;
+let liveStreamReady = false;
+let activeConnection = null;
+let liveReconnectAttempts = 0;
 
 const statusPill = $('statusPill');
 const statusText = $('statusText');
@@ -152,6 +157,7 @@ async function startSession() {
 
   $('displayName').textContent = name;
   $('displayCode').textContent = code;
+  activeConnection = result;
   renderPolicy(result.policy || {});
   setStatus('active', 'Monitoring');
 
@@ -397,6 +403,7 @@ function startAudioFallback(reason = 'cloud transcription primary') {
   }
 
   audioFallbackActive = true;
+  stopLiveTranscription();
   audioFallbackSequence = 0;
   audioFallbackChunks = 0;
   pendingAudioUploads = 0;
@@ -522,11 +529,111 @@ function startTranscriptStreaming() {
   transcriptStartedAt = Date.now();
   updateAudioUi({ status: 'Starting' });
   startAudioMeter();
-  startWebSpeechUiOnly();
+  startLiveTranscription();
   startTranscriptWatchdog();
-  if (!getSpeechRecognitionCtor()) {
-    startAudioFallback('live transcript unavailable');
+}
+
+function stopLiveTranscription() {
+  liveStreamReady = false;
+  try {
+    if (liveStreamRecorder && liveStreamRecorder.state !== 'inactive') liveStreamRecorder.stop();
+  } catch {}
+  liveStreamRecorder = null;
+  try {
+    if (liveTranscriptionSocket) liveTranscriptionSocket.onclose = null;
+    liveTranscriptionSocket?.close();
+  } catch {}
+  liveTranscriptionSocket = null;
+}
+
+function publishLiveTranscript(message = {}) {
+  const text = String(message.text || '').replace(/\s+/g, ' ').trim();
+  if (!text || sessionEnding) return;
+  lastSpeechLevelAt = Date.now();
+  if (message.interim) {
+    sendInterimTranscript(text);
+    updateAudioUi({ status: 'Transcribing live' });
+    return;
   }
+  lastFinalTranscriptAt = Date.now();
+  transcriptCount++;
+  window.truveil.sendTranscript({
+    text,
+    timestamp: message.timestamp || Date.now(),
+    durationMs: 0,
+    sequence: transcriptSequence++,
+    source: message.source || 'deepgram-nova-3-live',
+    transcriptConfidence: message.confidence
+  }).then(result => {
+    if (!result?.ok) throw new Error(result?.error || 'Transcript send failed');
+    transcriptFailures = 0;
+    updateAudioUi({ status: 'Live transcript sent' });
+  }).catch(err => {
+    transcriptFailures++;
+    logEvent(`Live transcript relay failed: ${err.message}`, 'warn', { visible: false });
+    updateAudioUi({ status: 'Transcript relay issue' });
+  });
+}
+
+function startLiveRecorder() {
+  if (!liveTranscriptionSocket || liveTranscriptionSocket.readyState !== WebSocket.OPEN || !audioStream) return;
+  const mimeType = getSupportedAudioMimeType();
+  try {
+    liveStreamRecorder = new MediaRecorder(audioStream, mimeType ? { mimeType } : undefined);
+    liveStreamRecorder.ondataavailable = async event => {
+      if (!event.data?.size || !liveTranscriptionSocket || liveTranscriptionSocket.readyState !== WebSocket.OPEN) return;
+      try { liveTranscriptionSocket.send(await event.data.arrayBuffer()); } catch {}
+    };
+    liveStreamRecorder.onerror = () => startAudioFallback('live recorder error');
+    liveStreamRecorder.start(300);
+  } catch (err) {
+    logEvent(`Live recorder unavailable: ${err.message}`, 'warn', { visible: false });
+    startAudioFallback('live recorder unavailable');
+  }
+}
+
+function startLiveTranscription() {
+  const url = activeConnection?.transcriptionWebsocketUrl;
+  if (!url) {
+    updateAudioUi({ status: 'Secure live relay unavailable' });
+    startAudioFallback('secure live relay unavailable');
+    return;
+  }
+
+  stopLiveTranscription();
+  updateAudioUi({ status: liveReconnectAttempts ? 'Reconnecting live transcript' : 'Connecting live transcript' });
+  try {
+    liveTranscriptionSocket = new WebSocket(url);
+    liveTranscriptionSocket.binaryType = 'arraybuffer';
+  } catch {
+    startAudioFallback('live relay connection failed');
+    return;
+  }
+
+  liveTranscriptionSocket.onopen = () => {
+    liveStreamReady = true;
+    liveReconnectAttempts = 0;
+    updateAudioUi({ status: 'Live transcript connected' });
+    startLiveRecorder();
+  };
+  liveTranscriptionSocket.onmessage = event => {
+    try {
+      const message = JSON.parse(String(event.data || '{}'));
+      if (message.type === 'transcript') publishLiveTranscript(message);
+      if (message.type === 'status') updateAudioUi({ status: message.message || (message.state === 'ready' ? 'Live transcript connected' : 'Live transcript degraded') });
+    } catch {}
+  };
+  liveTranscriptionSocket.onerror = () => updateAudioUi({ status: 'Live transcript reconnecting' });
+  liveTranscriptionSocket.onclose = () => {
+    liveStreamReady = false;
+    if (sessionEnding || audioFallbackActive) return;
+    liveReconnectAttempts++;
+    if (liveReconnectAttempts <= 2) {
+      setTimeout(startLiveTranscription, 900 * liveReconnectAttempts);
+    } else {
+      startAudioFallback('live relay unavailable');
+    }
+  };
 }
 
 function startWebSpeechUiOnly() {
@@ -588,11 +695,13 @@ function startWebSpeechUiOnly() {
 }
 
 function stopTranscriptStreaming() {
+  stopLiveTranscription();
   try {
     if (recognition) recognition.onend = null;
     recognition?.stop();
   } catch {}
   recognition = null;
+  activeConnection = null;
   try {
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
       try { mediaRecorder.requestData(); } catch {}
