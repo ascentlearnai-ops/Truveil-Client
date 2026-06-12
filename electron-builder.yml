@@ -12,8 +12,10 @@ files:
   - package.json
   - assets/**/*
   - src/config/runtime-config.json
+  - src/audio/**/*
   - src/lockdown/**/*
   - src/renderer/**/*
+  - src/transcription/**/*
 mac:
   category: public.app-category.business
   target:

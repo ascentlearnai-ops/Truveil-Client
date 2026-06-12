@@ -177,13 +177,23 @@ function getSupabase() {
   }
 
   supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
+    auth: { persistSession: false, autoRefreshToken: true },
     realtime: {
       transport: WebSocket,
       params: { eventsPerSecond: 10 }
     }
   });
   return supabase;
+}
+
+async function ensureAnonymousAuth() {
+  const client = getSupabase();
+  if (!client) return null;
+  const { data: existing } = await client.auth.getSession();
+  if (existing.session?.access_token) return existing.session;
+  const { data, error } = await client.auth.signInAnonymously();
+  if (error) throw new Error(`Candidate sign-in failed: ${error.message}`);
+  return data.session;
 }
 
 function createWindow() {
@@ -206,6 +216,7 @@ function createWindow() {
 
   mainWindow.loadFile(path.join(__dirname, 'src/renderer/index.html'));
   mainWindow.once('ready-to-show', () => {
+    mainWindow.maximize();
     mainWindow.show();
     sendInviteCode();
   });
@@ -241,11 +252,13 @@ async function fetchSessionFromApi(sessionCode) {
 async function joinSessionThroughFunction(sessionCode, candidateName) {
   const { functionsBaseUrl, supabaseAnonKey } = getConfig();
   if (!functionsBaseUrl || !supabaseAnonKey) return null;
+  const authSession = await ensureAnonymousAuth();
+  if (!authSession?.access_token) throw new Error('Could not create a secure candidate session.');
   const response = await fetch(`${functionsBaseUrl}/candidate-join`, {
     method: 'POST',
     headers: {
       apikey: supabaseAnonKey,
-      authorization: `Bearer ${supabaseAnonKey}`,
+      authorization: `Bearer ${authSession.access_token}`,
       'content-type': 'application/json'
     },
     body: JSON.stringify({ joinCode: sessionCode, candidateName })
@@ -294,18 +307,22 @@ async function validateSession(sessionCode, candidateName) {
   }
 }
 
-function sessionChannelName(sessionCode) {
-  return `truveil-session:${sessionCode}`;
+function sessionChannelName(sessionId) {
+  return `truveil-session:${sessionId}`;
 }
 
-async function joinRealtimeSession(sessionCode) {
+async function joinRealtimeSession(sessionId) {
   const client = getSupabase();
   if (!client && !app.isPackaged) return;
   if (realtimeChannel) await client.removeChannel(realtimeChannel);
 
   realtimeChannel = client
-    .channel(sessionChannelName(sessionCode), {
-      config: { broadcast: { self: false }, presence: { key: 'candidate' } }
+    .channel(sessionChannelName(sessionId), {
+      config: { private: true, broadcast: { self: false }, presence: { key: 'candidate' } }
+    })
+    .on('broadcast', { event: 'session_started' }, async () => {
+      await activateMonitoring();
+      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('session-started');
     })
     .on('broadcast', { event: 'session_ended' }, () => endSession({ remote: true }))
     .on('broadcast', { event: 'recruiter_end_session' }, () => endSession({ remote: true }))
@@ -323,7 +340,7 @@ async function joinRealtimeSession(sessionCode) {
     })
     .on(
       'postgres_changes',
-      { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `id=eq.${sessionCode}` },
+      { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `internal_id=eq.${sessionId}` },
       (payload) => {
         if (payload.new?.status === 'completed' || payload.new?.status === 'interrupted') {
           endSession({ remote: true });
@@ -366,7 +383,7 @@ async function publishCandidateEvent(type, metadata = {}) {
   }
 }
 
-async function publishCandidateTranscript({ text, timestamp, durationMs, sequence, source, interim, transcriptConfidence, rms, peak }) {
+async function publishCandidateTranscript({ text, timestamp, durationMs, sequence, segmentId, revision, source, interim, transcriptConfidence, rms, peak }) {
   if (!activeSession || !realtimeChannel) return { ok: false, error: 'No active realtime session.' };
 
   const assessed = assessTranscript({
@@ -392,6 +409,8 @@ async function publishCandidateTranscript({ text, timestamp, durationMs, sequenc
     timestamp: eventTimestamp,
     durationMs: Math.max(0, Math.round(Number(durationMs) || 0)),
     sequence: Number.isFinite(Number(sequence)) ? Math.max(0, Number(sequence)) : undefined,
+    segmentId: segmentId || `${activeSession.sessionCode}-${Number(sequence || 0)}`,
+    revision: Math.max(0, Number(revision) || 0),
     source: source || 'candidate-transcript',
     interim: Boolean(interim),
     transcriptConfidence: Number.isFinite(Number(transcriptConfidence)) ? Number(transcriptConfidence) : undefined,
@@ -558,6 +577,20 @@ async function uploadCandidateAudioChunk(data = {}) {
 async function updateSessionStatus(status, patch = {}) {
   if (!activeSession) return;
   try {
+    if (activeSession.sessionToken) {
+      const { functionsBaseUrl, supabaseAnonKey } = getConfig();
+      const response = await fetch(`${functionsBaseUrl}/candidate-state`, {
+        method: 'POST',
+        headers: {
+          apikey: supabaseAnonKey,
+          authorization: `Bearer ${supabaseAnonKey}`,
+          'x-session-token': activeSession.sessionToken,
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({ status, patch })
+      });
+      if (response.ok) return;
+    }
     const client = getSupabase();
     if (!client) return;
     await client
@@ -692,10 +725,11 @@ function evaluateForegroundPolicy(info, policy) {
   if (allowedSite) return { allowed: true, detectionSource: detectedHost ? 'url' : 'title' };
 
   return {
-    allowed: false,
+    allowed: true,
+    unlisted: true,
     matchedRule: 'unlisted app/site',
     detectionSource: detectedHost ? 'url' : title ? 'title' : 'process',
-    reason: 'Foreground app or website is not allowed by this interview policy.'
+    reason: 'Foreground destination is observed but is not a known restricted AI tool.'
   };
 }
 
@@ -829,6 +863,22 @@ async function handleRecruiterAction(payload = {}) {
   }
 }
 
+async function activateMonitoring() {
+  if (!activeSession || monitoring) return;
+  monitoring = true;
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.setFullScreen(true);
+    mainWindow.show();
+    mainWindow.focus();
+  }
+  try { blocker = powerSaveBlocker.start('prevent-display-sleep'); } catch {}
+  try { registerSessionShortcuts(); } catch {}
+  startPolicyMonitor();
+  startOverlayScanner();
+  await updateSessionStatus('active');
+  await publishCandidateEvent('candidate_connected', { severity: 'low' });
+}
+
 function startPolicyMonitor() {
   stopPolicyMonitor();
   policyScanInterval = setInterval(async () => {
@@ -848,7 +898,7 @@ function startPolicyMonitor() {
         detectedHost: info.detectedHost || '',
         matchedRule: decision.matchedRule || '',
         detectionSource: decision.detectionSource || info.detectionSource || 'process',
-        policyDecision: decision.allowed ? 'observed' : 'restricted'
+        policyDecision: decision.unlisted ? 'unlisted' : decision.allowed ? 'observed' : 'restricted'
       });
     }
 
@@ -872,11 +922,11 @@ function startOverlayScanner() {
   OverlayScanner.start(activeSession.sessionCode, mainWindow, (detection) => {
     publishCandidateEvent('overlay_detected', {
       severity: detection.severity || 'critical',
-      processName: 'hidden-overlay',
+      processName: detection.processName || 'hidden-overlay',
       windowTitle: detection.windowTitle || 'Unknown hidden window',
       processId: detection.processId || 0,
-      matchedRule: detection.type || 'hidden overlay',
-      detectionSource: 'screen-capture-affinity',
+      matchedRule: detection.matchedRule || detection.type || 'hidden overlay',
+      detectionSource: detection.type === 'WDA_EXCLUDEFROMCAPTURE' ? 'screen-capture-affinity' : 'process',
       reason: detection.flag?.detail || 'Hidden overlay or screen-capture-excluded window detected.',
       captureAffinity: detection.captureAffinity || 0
     });
@@ -985,7 +1035,6 @@ ipcMain.handle('session:start', async (_, { sessionCode, candidateName }) => {
       return { ok: false, error: 'This interview session has already ended.' };
     }
 
-    const { functionsBaseUrl } = getConfig();
     activeSession = {
       sessionCode: normalizedCode,
       candidateName: normalizedName,
@@ -994,37 +1043,43 @@ ipcMain.handle('session:start', async (_, { sessionCode, candidateName }) => {
       internalId: session.internal_id || '',
       secureJoin: Boolean(session.secureJoin)
     };
-    await joinRealtimeSession(normalizedCode);
+    await joinRealtimeSession(activeSession.internalId || normalizedCode);
+    await updateSessionStatus('candidate_ready');
+    await publishCandidateEvent('candidate_ready', { severity: 'low' });
+    if (session.status === 'active') await activateMonitoring();
 
-    monitoring = true;
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.setFullScreen(true);
-      mainWindow.show();
-      mainWindow.focus();
-    }
-    try { blocker = powerSaveBlocker.start('prevent-display-sleep'); } catch {}
-    try { registerSessionShortcuts(); } catch {}
-    startPolicyMonitor();
-    startOverlayScanner();
-
-    await updateSessionStatus('active');
-    await publishCandidateEvent('candidate_connected', { severity: 'low' });
-
-    const transcriptionWebsocketUrl = activeSession.sessionToken && functionsBaseUrl
-      ? `${functionsBaseUrl.replace(/^http/i, 'ws')}/transcribe-live?token=${encodeURIComponent(activeSession.sessionToken)}`
-      : '';
     return {
       ok: true,
       sessionCode: normalizedCode,
       candidateName: normalizedName,
       policy: activeSession.policy,
       secureJoin: activeSession.secureJoin,
-      transcriptionWebsocketUrl
+      waitingForInterviewer: !monitoring,
+      technicalVocabulary: session.technical_vocabulary || []
     };
   } catch (err) {
     await cleanupSession();
     return { ok: false, error: err.message || 'Could not start session.' };
   }
+});
+
+ipcMain.handle('transcription:token', async () => {
+  if (!activeSession?.sessionToken) return { ok: false, error: 'No secure session token.' };
+  const { functionsBaseUrl, supabaseAnonKey } = getConfig();
+  if (!functionsBaseUrl || !supabaseAnonKey) return { ok: false, error: 'Transcription service is not configured.' };
+  const response = await fetch(`${functionsBaseUrl}/transcription-token`, {
+    method: 'POST',
+    headers: {
+      apikey: supabaseAnonKey,
+      authorization: `Bearer ${supabaseAnonKey}`,
+      'x-session-token': activeSession.sessionToken,
+      'content-type': 'application/json'
+    },
+    body: '{}'
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) return { ok: false, error: body.error || `Token request failed (${response.status})` };
+  return { ok: true, accessToken: body.accessToken, expiresIn: body.expiresIn };
 });
 
 ipcMain.handle('session:transcript', async (_, data) => publishCandidateTranscript(data || {}));

@@ -2,7 +2,9 @@ const HALLUCINATION_PATTERNS = [
   /^\[?(music|silence|blank audio|inaudible)\]?[\s.!?]*$/i,
   /^(thank you for watching|thanks for watching|please subscribe)[\s.!?]*$/i,
   /^(subtitles|captions) by\b/i,
-  /\bamara\.org\b/i
+  /\bamara\.org\b/i,
+  /^(you|yeah|okay|ok|right|so)[\s,.!?]*\1?[\s,.!?]*$/i,
+  /^(the\s+){3,}/i
 ];
 
 function normalizeTranscript(text) {
@@ -62,7 +64,15 @@ function assessTranscript({
 function isRecentDuplicate(text, recent = [], now = Date.now(), windowMs = 45000) {
   const fingerprint = transcriptFingerprint(text);
   if (!fingerprint) return false;
-  return recent.some(item => item.fingerprint === fingerprint && now - item.timestamp <= windowMs);
+  const words = new Set(fingerprint.split(/\s+/).filter(Boolean));
+  return recent.some(item => {
+    if (now - item.timestamp > windowMs) return false;
+    if (item.fingerprint === fingerprint) return true;
+    const prior = new Set(String(item.fingerprint || '').split(/\s+/).filter(Boolean));
+    if (words.size < 5 || prior.size < 5) return false;
+    const overlap = [...words].filter(word => prior.has(word)).length;
+    return overlap / Math.max(words.size, prior.size) >= 0.65;
+  });
 }
 
 module.exports = {

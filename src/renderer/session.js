@@ -1,6 +1,6 @@
 // Truveil Secure - Candidate Renderer
 const $ = id => document.getElementById(id);
-const AUDIO_SEGMENT_MS = 10000;
+const AUDIO_SEGMENT_MS = 5000;
 const TRANSCRIPT_BATCH_MS = 900;
 const TRANSCRIPT_BATCH_MAX_WORDS = 16;
 const SPEECH_RMS_THRESHOLD = 0.012;
@@ -24,8 +24,6 @@ let sessionEnding = false;
 let audioContext = null;
 let analyser = null;
 let audioLevelTimer = null;
-let recognition = null;
-let recognitionRestartTimer = null;
 let transcriptWatchdogTimer = null;
 let mediaRecorder = null;
 let audioFallbackSegmentTimer = null;
@@ -41,7 +39,6 @@ let audioFallbackSequence = 0;
 let audioFallbackChunks = 0;
 let pendingAudioUploads = 0;
 let lastAudioChunkAt = 0;
-let recognitionNetworkFailures = 0;
 let lastRms = 0;
 let lastPeak = 0;
 let lastSpeechLevelAt = 0;
@@ -50,10 +47,18 @@ let lastInterimSentAt = 0;
 let lastInterimText = '';
 let activeSegmentStats = null;
 let liveTranscriptionSocket = null;
-let liveStreamRecorder = null;
 let liveStreamReady = false;
 let activeConnection = null;
 let liveReconnectAttempts = 0;
+let liveKeepAliveTimer = null;
+let pcmSource = null;
+let pcmWorklet = null;
+let pcmSilentGain = null;
+let liveFinalSegments = [];
+let liveFinalConfidences = [];
+let liveSegmentMaxRms = 0;
+let liveSegmentMaxPeak = 0;
+let interviewStarted = false;
 
 const statusPill = $('statusPill');
 const statusText = $('statusText');
@@ -159,14 +164,31 @@ async function startSession() {
   $('displayCode').textContent = code;
   activeConnection = result;
   renderPolicy(result.policy || {});
-  setStatus('active', 'Monitoring');
-
-  sessionStart = Date.now();
+  setStatus('active', result.waitingForInterviewer ? 'Ready' : 'Monitoring');
   sessionEnding = false;
+  showScreen('active');
+  $('displayName').textContent = result.waitingForInterviewer ? `${name} - ready` : name;
+  $('connectionState').textContent = result.waitingForInterviewer ? 'Waiting for interviewer' : 'Secure';
+  $('activeTitle').textContent = result.waitingForInterviewer ? 'Ready for the interviewer' : 'Session active';
+  $('activeSubtitle').textContent = result.waitingForInterviewer
+    ? 'Your microphone preflight passed. The interview has not started yet.'
+    : 'Keep this window open and continue your interview normally.';
+  updateAudioUi({ status: result.waitingForInterviewer ? 'Microphone ready - waiting for interviewer' : 'Starting' });
+  if (!result.waitingForInterviewer) beginActiveInterview();
+  resetStartButton();
+}
+
+function beginActiveInterview() {
+  if (interviewStarted || sessionEnding || !activeConnection) return;
+  interviewStarted = true;
+  sessionStart = Date.now();
+  $('displayName').textContent = activeConnection.candidateName || $('candidateNameInput').value.trim();
+  $('connectionState').textContent = 'Secure';
+  $('activeTitle').textContent = 'Session active';
+  $('activeSubtitle').textContent = 'Keep this window open and continue your interview normally.';
+  setStatus('active', 'Monitoring');
   startTimer();
   startTranscriptStreaming();
-  showScreen('active');
-  resetStartButton();
 }
 
 function resetStartButton() {
@@ -241,6 +263,8 @@ function startAudioMeter() {
     }
     lastRms = Math.sqrt(sum / samples.length);
     lastPeak = peak;
+    liveSegmentMaxRms = Math.max(liveSegmentMaxRms, lastRms);
+    liveSegmentMaxPeak = Math.max(liveSegmentMaxPeak, lastPeak);
     if (activeSegmentStats) {
       activeSegmentStats.maxRms = Math.max(activeSegmentStats.maxRms, lastRms);
       activeSegmentStats.maxPeak = Math.max(activeSegmentStats.maxPeak, lastPeak);
@@ -253,10 +277,6 @@ function startAudioMeter() {
       window.truveil.sendAudioLevel({ rms: lastRms, peak: lastPeak, timestamp: Date.now() });
     }
   }, 120);
-}
-
-function getSpeechRecognitionCtor() {
-  return window.SpeechRecognition || window.webkitSpeechRecognition || null;
 }
 
 function getSupportedAudioMimeType() {
@@ -311,7 +331,7 @@ function sendInterimTranscript(text) {
     timestamp: now,
     durationMs: 0,
     sequence: transcriptSequence,
-    source: 'candidate-web-speech-interim',
+    source: 'deepgram-nova-3-direct',
     interim: true,
     rms: lastRms,
     peak: lastPeak
@@ -337,7 +357,7 @@ async function flushTranscriptBuffer() {
       timestamp: now,
       durationMs,
       sequence,
-      source: 'candidate-web-speech',
+      source: 'deepgram-nova-3-direct',
       rms: lastRms,
       peak: lastPeak
     });
@@ -355,17 +375,6 @@ async function flushTranscriptBuffer() {
     toast('Transcript send had a problem. Keep speaking; Truveil will keep trying.', 'warn');
     updateAudioUi({ status: 'Send issue' });
   }
-}
-
-function scheduleRecognitionRestart() {
-  if (sessionEnding || !sessionStart || audioFallbackActive) return;
-  clearTimeout(recognitionRestartTimer);
-  recognitionRestartTimer = setTimeout(() => {
-    try {
-      recognition?.start();
-      updateAudioUi({ status: 'Listening' });
-    } catch {}
-  }, 750);
 }
 
 async function uploadFallbackAudioBlob(blob, sequence, startedAt, stats = {}, attempt = 1) {
@@ -415,13 +424,6 @@ function startAudioFallback(reason = 'cloud transcription primary') {
   audioFallbackSequence = 0;
   audioFallbackChunks = 0;
   pendingAudioUploads = 0;
-  clearTimeout(recognitionRestartTimer);
-  recognitionRestartTimer = null;
-  try {
-    if (recognition) recognition.onend = null;
-    recognition?.stop();
-  } catch {}
-  recognition = null;
 
   lastAudioChunkAt = Date.now();
 
@@ -525,11 +527,14 @@ function startTranscriptStreaming() {
   audioFallbackActive = false;
   audioFallbackChunks = 0;
   pendingAudioUploads = 0;
-  recognitionNetworkFailures = 0;
   lastSpeechLevelAt = 0;
   lastFinalTranscriptAt = 0;
   lastInterimSentAt = 0;
   lastInterimText = '';
+  liveFinalSegments = [];
+  liveFinalConfidences = [];
+  liveSegmentMaxRms = 0;
+  liveSegmentMaxPeak = 0;
   transcriptBuffer = [];
   transcriptBufferStartedAt = 0;
   clearTimeout(transcriptFlushTimer);
@@ -543,10 +548,14 @@ function startTranscriptStreaming() {
 
 function stopLiveTranscription() {
   liveStreamReady = false;
-  try {
-    if (liveStreamRecorder && liveStreamRecorder.state !== 'inactive') liveStreamRecorder.stop();
-  } catch {}
-  liveStreamRecorder = null;
+  clearInterval(liveKeepAliveTimer);
+  liveKeepAliveTimer = null;
+  try { pcmWorklet?.disconnect(); } catch {}
+  try { pcmSource?.disconnect(); } catch {}
+  try { pcmSilentGain?.disconnect(); } catch {}
+  pcmWorklet = null;
+  pcmSource = null;
+  pcmSilentGain = null;
   try {
     if (liveTranscriptionSocket) liveTranscriptionSocket.onclose = null;
     liveTranscriptionSocket?.close();
@@ -570,9 +579,11 @@ function publishLiveTranscript(message = {}) {
     durationMs: 0,
     sequence: transcriptSequence++,
     source: message.source || 'deepgram-nova-3-live',
+    segmentId: message.segmentId || `live-${transcriptSequence}`,
+    revision: Number(message.revision) || 0,
     transcriptConfidence: message.confidence,
-    rms: lastRms,
-    peak: lastPeak
+    rms: message.rms ?? liveSegmentMaxRms,
+    peak: message.peak ?? liveSegmentMaxPeak
   }).then(result => {
     if (!result?.ok) throw new Error(result?.error || 'Transcript send failed');
     if (result.skipped) {
@@ -589,35 +600,83 @@ function publishLiveTranscript(message = {}) {
   });
 }
 
-function startLiveRecorder() {
-  if (!liveTranscriptionSocket || liveTranscriptionSocket.readyState !== WebSocket.OPEN || !audioStream) return;
-  const mimeType = getSupportedAudioMimeType();
-  try {
-    liveStreamRecorder = new MediaRecorder(audioStream, mimeType ? { mimeType } : undefined);
-    liveStreamRecorder.ondataavailable = async event => {
-      if (!event.data?.size || !liveTranscriptionSocket || liveTranscriptionSocket.readyState !== WebSocket.OPEN) return;
-      try { liveTranscriptionSocket.send(await event.data.arrayBuffer()); } catch {}
-    };
-    liveStreamRecorder.onerror = () => startAudioFallback('live recorder error');
-    liveStreamRecorder.start(300);
-  } catch (err) {
-    logEvent(`Live recorder unavailable: ${err.message}`, 'warn', { visible: false });
-    startAudioFallback('live recorder unavailable');
-  }
+function average(values = []) {
+  return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
 }
 
-function startLiveTranscription() {
-  const url = activeConnection?.transcriptionWebsocketUrl;
-  if (!url) {
-    updateAudioUi({ status: 'Secure live relay unavailable' });
-    startAudioFallback('secure live relay unavailable');
+function flushLiveFinal() {
+  const text = liveFinalSegments.join(' ').replace(/\s+/g, ' ').trim();
+  if (!text) return;
+  const sequence = transcriptSequence;
+  publishLiveTranscript({
+    text,
+    interim: false,
+    confidence: average(liveFinalConfidences),
+    source: 'deepgram-nova-3-direct',
+    segmentId: `live-${sequence}`,
+    revision: 0,
+    rms: liveSegmentMaxRms,
+    peak: liveSegmentMaxPeak,
+    timestamp: Date.now()
+  });
+  liveFinalSegments = [];
+  liveFinalConfidences = [];
+  liveSegmentMaxRms = 0;
+  liveSegmentMaxPeak = 0;
+}
+
+async function startPcmStream() {
+  if (!liveTranscriptionSocket || liveTranscriptionSocket.readyState !== WebSocket.OPEN || !audioStream || !audioContext) return;
+  await audioContext.audioWorklet.addModule('../audio/pcm-worklet.js');
+  pcmSource = audioContext.createMediaStreamSource(audioStream);
+  pcmWorklet = new AudioWorkletNode(audioContext, 'truveil-pcm-processor', {
+    processorOptions: { targetRate: 16000 }
+  });
+  pcmSilentGain = audioContext.createGain();
+  pcmSilentGain.gain.value = 0;
+  pcmWorklet.port.onmessage = event => {
+    if (liveTranscriptionSocket?.readyState !== WebSocket.OPEN || !event.data) return;
+    try { liveTranscriptionSocket.send(event.data); } catch {}
+  };
+  pcmSource.connect(pcmWorklet);
+  pcmWorklet.connect(pcmSilentGain);
+  pcmSilentGain.connect(audioContext.destination);
+}
+
+async function startLiveTranscription() {
+  if (!window.truveil.getTranscriptionToken) {
+    updateAudioUi({ status: 'Live transcription unavailable' });
+    startAudioFallback('live transcription token unavailable');
     return;
   }
 
   stopLiveTranscription();
   updateAudioUi({ status: liveReconnectAttempts ? 'Reconnecting live transcript' : 'Connecting live transcript' });
+  const tokenResult = await window.truveil.getTranscriptionToken().catch(error => ({ ok: false, error: error.message }));
+  if (!tokenResult?.ok || !tokenResult.accessToken) {
+    logEvent(`Live transcription token failed: ${tokenResult?.error || 'unavailable'}`, 'warn', { visible: false });
+    startAudioFallback('live transcription token unavailable');
+    return;
+  }
+
+  const params = new URLSearchParams({
+    model: 'nova-3',
+    language: 'en-US',
+    encoding: 'linear16',
+    sample_rate: '16000',
+    channels: '1',
+    smart_format: 'true',
+    punctuate: 'true',
+    filler_words: 'true',
+    interim_results: 'true',
+    endpointing: '450',
+    utterance_end_ms: '1000',
+    vad_events: 'true'
+  });
+  (activeConnection.technicalVocabulary || []).slice(0, 30).forEach(term => params.append('keyterm', term));
+  const url = `wss://api.deepgram.com/v1/listen?${params.toString()}`;
   try {
-    liveTranscriptionSocket = new WebSocket(url);
+    liveTranscriptionSocket = new WebSocket(url, ['bearer', tokenResult.accessToken]);
     liveTranscriptionSocket.binaryType = 'arraybuffer';
   } catch {
     startAudioFallback('live relay connection failed');
@@ -628,13 +687,48 @@ function startLiveTranscription() {
     liveStreamReady = true;
     liveReconnectAttempts = 0;
     updateAudioUi({ status: 'Live transcript connected' });
-    startLiveRecorder();
+    startPcmStream().catch(error => {
+      logEvent(`PCM stream unavailable: ${error.message}`, 'warn', { visible: false });
+      startAudioFallback('PCM stream unavailable');
+    });
+    liveKeepAliveTimer = setInterval(() => {
+      if (liveTranscriptionSocket?.readyState === WebSocket.OPEN) {
+        liveTranscriptionSocket.send(JSON.stringify({ type: 'KeepAlive' }));
+      }
+    }, 8000);
   };
   liveTranscriptionSocket.onmessage = event => {
     try {
       const message = JSON.parse(String(event.data || '{}'));
-      if (message.type === 'transcript') publishLiveTranscript(message);
-      if (message.type === 'status') updateAudioUi({ status: message.message || (message.state === 'ready' ? 'Live transcript connected' : 'Live transcript degraded') });
+      if (message.type === 'SpeechStarted') {
+        updateAudioUi({ status: 'Hearing speech' });
+        return;
+      }
+      if (message.type === 'UtteranceEnd') {
+        flushLiveFinal();
+        return;
+      }
+      const alternative = message.channel?.alternatives?.[0];
+      const text = String(alternative?.transcript || '').replace(/\s+/g, ' ').trim();
+      if (!text) return;
+      const confidence = Number(alternative?.confidence || 0);
+      if (message.is_final) {
+        if (liveFinalSegments.at(-1) !== text) liveFinalSegments.push(text);
+        if (confidence > 0) liveFinalConfidences.push(confidence);
+      }
+      if (message.speech_final) {
+        flushLiveFinal();
+        return;
+      }
+      const combined = [...liveFinalSegments, message.is_final ? '' : text].filter(Boolean).join(' ');
+      if (combined) publishLiveTranscript({
+        text: combined,
+        interim: true,
+        confidence,
+        source: 'deepgram-nova-3-direct',
+        segmentId: `live-${transcriptSequence}`,
+        revision: message.is_final ? 1 : 0
+      });
     } catch {}
   };
   liveTranscriptionSocket.onerror = () => updateAudioUi({ status: 'Live transcript reconnecting' });
@@ -643,78 +737,15 @@ function startLiveTranscription() {
     if (sessionEnding || audioFallbackActive) return;
     liveReconnectAttempts++;
     if (liveReconnectAttempts <= 2) {
-      setTimeout(startLiveTranscription, 900 * liveReconnectAttempts);
+      setTimeout(() => startLiveTranscription().catch(() => {}), 900 * liveReconnectAttempts);
     } else {
       startAudioFallback('live relay unavailable');
     }
   };
 }
 
-function startWebSpeechUiOnly() {
-  const RecognitionCtor = getSpeechRecognitionCtor();
-  if (!RecognitionCtor) return;
-  recognition = new RecognitionCtor();
-  recognition.continuous = true;
-  recognition.interimResults = true;
-  recognition.lang = 'en-US';
-
-  recognition.onstart = () => {
-    logEvent('Live transcript relay started.', 'info', { visible: false });
-    updateAudioUi({ status: 'Live transcript active' });
-  };
-
-  recognition.onresult = (event) => {
-    let finalText = '';
-    let interimText = '';
-    for (let i = event.resultIndex; i < event.results.length; i++) {
-      const text = event.results[i][0]?.transcript || '';
-      if (event.results[i].isFinal) finalText += text;
-      else interimText += text;
-    }
-    if (interimText) {
-      lastSpeechLevelAt = Date.now();
-      updateAudioUi({ status: 'Hearing speech' });
-      sendInterimTranscript(interimText);
-    }
-    if (finalText) sendTranscriptText(finalText);
-  };
-
-  recognition.onerror = (event) => {
-    const error = event.error || 'speech recognition error';
-    const serious = error === 'not-allowed' || error === 'service-not-allowed';
-    logEvent(`Transcript engine warning: ${error}`, serious ? 'warn' : 'info', { visible: false });
-    if (error === 'network' || error === 'audio-capture') {
-      recognitionNetworkFailures++;
-      if (recognitionNetworkFailures >= 1) startAudioFallback(error);
-      return;
-    }
-    if (serious) {
-      toast('Speech transcription permission was blocked. Check microphone permissions and restart the session.', 'error');
-      updateAudioUi({ status: 'Transcript blocked' });
-    }
-  };
-
-  recognition.onend = () => {
-    updateAudioUi({ status: sessionEnding ? 'Stopped' : 'Reconnecting' });
-    scheduleRecognitionRestart();
-  };
-
-  try {
-    recognition.start();
-  } catch (err) {
-    logEvent(`Transcript engine could not start: ${err.message}`, 'warn');
-    toast('Transcript engine could not start.', 'error');
-    updateAudioUi({ status: 'Transcript issue' });
-  }
-}
-
 function stopTranscriptStreaming() {
   stopLiveTranscription();
-  try {
-    if (recognition) recognition.onend = null;
-    recognition?.stop();
-  } catch {}
-  recognition = null;
   activeConnection = null;
   try {
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
@@ -730,8 +761,6 @@ function stopTranscriptStreaming() {
   clearTimeout(transcriptFlushTimer);
   transcriptFlushTimer = null;
   flushTranscriptBuffer().catch(() => {});
-  clearTimeout(recognitionRestartTimer);
-  recognitionRestartTimer = null;
   clearInterval(transcriptWatchdogTimer);
   transcriptWatchdogTimer = null;
   if (audioLevelTimer) clearInterval(audioLevelTimer);
@@ -739,6 +768,7 @@ function stopTranscriptStreaming() {
   try { audioContext?.close(); } catch {}
   audioContext = null;
   analyser = null;
+  interviewStarted = false;
 }
 
 function startTimer() {
@@ -828,8 +858,12 @@ window.truveil.onRemoteSessionEnded(() => {
   finishSession('Your recruiter ended the session.');
 });
 
+window.truveil.onSessionStarted(() => {
+  beginActiveInterview();
+});
+
 window.truveil.onInviteCode((code) => {
-  if (!code || sessionStart) return;
+  if (!code || activeConnection) return;
   sessionCodeInput.value = code;
   sessionCodeInput.dispatchEvent(new Event('input'));
   sessionCodeInput.focus();

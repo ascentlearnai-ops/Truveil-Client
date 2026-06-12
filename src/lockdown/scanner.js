@@ -96,6 +96,31 @@ Add-Type -TypeDefinition $code
     return [];
   }
 
+  detectSuspiciousProcesses_Windows() {
+    try {
+      const rows = execSync(
+        'powershell -NoProfile -ExecutionPolicy Bypass -Command "Get-Process | Where-Object { $_.MainWindowTitle } | Select-Object ProcessName,MainWindowTitle | ConvertTo-Json -Compress"',
+        { timeout: 5000, windowsHide: true }
+      ).toString().trim();
+      if (!rows) return [];
+      const parsed = JSON.parse(rows);
+      const processes = Array.isArray(parsed) ? parsed : [parsed];
+      return processes.flatMap(process => {
+        const text = `${process.ProcessName || ''} ${process.MainWindowTitle || ''}`.toLowerCase();
+        const matched = this.knownSuspiciousApps.find(name => text.includes(name));
+        return matched ? [{
+          type: 'SUSPICIOUS_APP_RUNNING',
+          processName: process.ProcessName || '',
+          windowTitle: process.MainWindowTitle || '',
+          matchedRule: matched,
+          severity: 'high'
+        }] : [];
+      });
+    } catch {
+      return [];
+    }
+  }
+
   detectWindows_Mac() {
     try {
       const script = `
@@ -119,6 +144,7 @@ Add-Type -TypeDefinition $code
     const detections = [];
     if (process.platform === 'win32') {
       detections.push(...this.detectWindows_Windows());
+      detections.push(...this.detectSuspiciousProcesses_Windows());
     } else if (process.platform === 'darwin') {
       detections.push(...this.detectWindows_Mac());
     }
@@ -131,15 +157,23 @@ let scanInterval;
 function start(sessionId, mainWindow, onDetection) {
   stop();
   const scanner = new WindowScanner();
+  const recentlyReported = new Map();
 
   scanInterval = setInterval(() => {
     const detections = scanner.scan();
     detections.forEach(detection => {
+      const key = `${detection.type}:${detection.processName || ''}:${detection.windowTitle || ''}`.toLowerCase();
+      const now = Date.now();
+      if (now - (recentlyReported.get(key) || 0) < 60000) return;
+      recentlyReported.set(key, now);
+      const detail = detection.type === 'WDA_EXCLUDEFROMCAPTURE'
+        ? `Capture-excluded window detected: "${detection.windowTitle}"`
+        : `Known restricted interview-assistance app detected: "${detection.windowTitle || detection.processName}"`;
       const flag = {
         type: 'OVERLAY_DETECTED',
-        detail: `Hidden overlay detected: "${detection.windowTitle}" - possible Interview Coder or AI assistant`,
+        detail,
         severity: detection.severity,
-        timestamp: Date.now(),
+        timestamp: now,
         sessionId
       };
       if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('security-flag', flag);

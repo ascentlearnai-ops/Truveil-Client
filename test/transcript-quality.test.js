@@ -31,4 +31,8 @@ test('accepts clear speech and catches duplicate final events', () => {
   const text = 'I rolled the deployment back, drained the queue, and replayed the failed jobs.';
   assert.equal(assessTranscript({ text, confidence: 0.88, rms: 0.025, peak: 0.18 }).accepted, true);
   assert.equal(isRecentDuplicate(text, [{ fingerprint: transcriptFingerprint(text), timestamp: Date.now() }]), true);
+  assert.equal(isRecentDuplicate(
+    'I rolled the deployment back and drained the queue before replaying failed jobs.',
+    [{ fingerprint: transcriptFingerprint(text), timestamp: Date.now() }]
+  ), true);
 });

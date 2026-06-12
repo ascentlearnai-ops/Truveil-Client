@@ -16,11 +16,26 @@ test('candidate active screen does not reveal recruiter risk analysis', () => {
 test('candidate uses secure live transcription before fallback audio', () => {
   const source = fs.readFileSync('src/renderer/session.js', 'utf8');
   assert.match(source, /startLiveTranscription\(\)/);
-  assert.match(source, /transcriptionWebsocketUrl/);
+  assert.match(source, /getTranscriptionToken/);
+  assert.match(source, /AudioWorkletNode/);
+  assert.doesNotMatch(source, /SpeechRecognition|webkitSpeechRecognition/);
   assert.match(source, /startAudioFallback/);
 });
 
 test('runtime config does not contain transcription provider secrets', () => {
   const config = fs.readFileSync('src/config/runtime-config.json', 'utf8');
   assert.doesNotMatch(config, /deepgram|groq/i);
+});
+
+test('packaged client includes the PCM worklet and transcript quality modules', () => {
+  const build = fs.readFileSync('electron-builder.yml', 'utf8');
+  assert.match(build, /src\/audio\/\*\*\/\*/);
+  assert.match(build, /src\/transcription\/\*\*\/\*/);
+});
+
+test('ordinary destinations are observed while known restricted targets are closed', () => {
+  const source = fs.readFileSync('main.js', 'utf8');
+  assert.match(source, /unlisted:\s*true/);
+  assert.match(source, /closeForegroundRestrictedTarget/);
+  assert.match(source, /policyDecision:\s*decision\.unlisted\s*\?\s*'unlisted'/);
 });
