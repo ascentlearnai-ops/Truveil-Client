@@ -5,6 +5,11 @@ const { createClient } = require('@supabase/supabase-js');
 const WebSocket = require('ws');
 const runtimeConfig = require('./src/config/runtime-config.json');
 const OverlayScanner = require('./src/lockdown/scanner');
+const {
+  assessTranscript,
+  isRecentDuplicate,
+  transcriptFingerprint
+} = require('./src/transcription/quality');
 
 let mainWindow;
 let blocker;
@@ -17,6 +22,7 @@ let policyScanInterval = null;
 let lastBlockingKey = null;
 let lastForegroundKey = null;
 let lastClosedTarget = null;
+const recentFinalTranscripts = [];
 
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -360,27 +366,45 @@ async function publishCandidateEvent(type, metadata = {}) {
   }
 }
 
-async function publishCandidateTranscript({ text, timestamp, durationMs, sequence, source, interim, transcriptConfidence }) {
+async function publishCandidateTranscript({ text, timestamp, durationMs, sequence, source, interim, transcriptConfidence, rms, peak }) {
   if (!activeSession || !realtimeChannel) return { ok: false, error: 'No active realtime session.' };
 
-  const cleanText = String(text || '').trim();
-  if (cleanText.length < 3) return { ok: true, skipped: true };
+  const assessed = assessTranscript({
+    text,
+    confidence: transcriptConfidence,
+    interim: Boolean(interim),
+    rms,
+    peak,
+    source
+  });
+  if (!assessed.accepted) return { ok: true, skipped: true, reason: assessed.reason };
+  const cleanText = assessed.text;
+  const eventTimestamp = timestamp || Date.now();
+  if (!interim && isRecentDuplicate(cleanText, recentFinalTranscripts, eventTimestamp)) {
+    return { ok: true, skipped: true, reason: 'duplicate-final' };
+  }
 
   const payload = {
     type: 'candidate_transcript',
     sessionId: activeSession.sessionCode,
     candidateName: activeSession.candidateName,
     text: cleanText,
-    timestamp: timestamp || Date.now(),
+    timestamp: eventTimestamp,
     durationMs: Math.max(0, Math.round(Number(durationMs) || 0)),
     sequence: Number.isFinite(Number(sequence)) ? Math.max(0, Number(sequence)) : undefined,
     source: source || 'candidate-transcript',
     interim: Boolean(interim),
-    transcriptConfidence: Number.isFinite(Number(transcriptConfidence)) ? Number(transcriptConfidence) : undefined
+    transcriptConfidence: Number.isFinite(Number(transcriptConfidence)) ? Number(transcriptConfidence) : undefined,
+    rms: Number.isFinite(Number(rms)) ? Number(rms) : undefined,
+    peak: Number.isFinite(Number(peak)) ? Number(peak) : undefined
   };
 
   try {
     await realtimeChannel.send({ type: 'broadcast', event: 'candidate_transcript', payload });
+    if (!interim) {
+      recentFinalTranscripts.push({ fingerprint: transcriptFingerprint(cleanText), timestamp: eventTimestamp });
+      while (recentFinalTranscripts.length > 30) recentFinalTranscripts.shift();
+    }
     return { ok: true };
   } catch (err) {
     console.warn('[Truveil] transcript publish failed:', err.message);
@@ -452,7 +476,9 @@ async function uploadCandidateAudioChunk(data = {}) {
           durationMs: data.durationMs,
           sequence: data.sequence,
           source: result.source || 'secure-chunk-fallback',
-          transcriptConfidence: result.confidence
+          transcriptConfidence: result.confidence,
+          rms: data.rms,
+          peak: data.peak
         });
       }
       return { ok: true, skipped: !result.text, source: result.source || 'secure-chunk-fallback' };

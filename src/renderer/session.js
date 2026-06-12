@@ -312,7 +312,9 @@ function sendInterimTranscript(text) {
     durationMs: 0,
     sequence: transcriptSequence,
     source: 'candidate-web-speech-interim',
-    interim: true
+    interim: true,
+    rms: lastRms,
+    peak: lastPeak
   }).catch(() => {});
 }
 
@@ -335,9 +337,15 @@ async function flushTranscriptBuffer() {
       timestamp: now,
       durationMs,
       sequence,
-      source: 'candidate-web-speech'
+      source: 'candidate-web-speech',
+      rms: lastRms,
+      peak: lastPeak
     });
     if (!result?.ok) throw new Error(result?.error || 'Transcript send failed');
+    if (result.skipped) {
+      updateAudioUi({ status: result.reason === 'low-confidence' ? 'Speech unclear - still listening' : 'Listening' });
+      return;
+    }
     transcriptCount++;
     transcriptFailures = 0;
     updateAudioUi({ status: 'Transcript sent' });
@@ -556,16 +564,22 @@ function publishLiveTranscript(message = {}) {
     return;
   }
   lastFinalTranscriptAt = Date.now();
-  transcriptCount++;
   window.truveil.sendTranscript({
     text,
     timestamp: message.timestamp || Date.now(),
     durationMs: 0,
     sequence: transcriptSequence++,
     source: message.source || 'deepgram-nova-3-live',
-    transcriptConfidence: message.confidence
+    transcriptConfidence: message.confidence,
+    rms: lastRms,
+    peak: lastPeak
   }).then(result => {
     if (!result?.ok) throw new Error(result?.error || 'Transcript send failed');
+    if (result.skipped) {
+      updateAudioUi({ status: result.reason === 'low-confidence' ? 'Speech unclear - still listening' : 'Listening' });
+      return;
+    }
+    transcriptCount++;
     transcriptFailures = 0;
     updateAudioUi({ status: 'Live transcript sent' });
   }).catch(err => {

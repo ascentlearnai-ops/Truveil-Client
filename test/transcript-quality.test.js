@@ -1,0 +1,34 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const {
+  assessTranscript,
+  isRecentDuplicate,
+  transcriptFingerprint
+} = require('../src/transcription/quality');
+
+test('rejects low-confidence final transcripts and silence hallucinations', () => {
+  assert.equal(assessTranscript({
+    text: 'Thank you for watching.',
+    confidence: 0.91,
+    rms: 0.02,
+    peak: 0.12
+  }).accepted, false);
+  assert.equal(assessTranscript({
+    text: 'I led the migration and rolled it back after the queue failed.',
+    confidence: 0.31,
+    rms: 0.02,
+    peak: 0.12
+  }).accepted, false);
+  assert.equal(assessTranscript({
+    text: 'I led the migration and rolled it back after the queue failed.',
+    confidence: 0.88,
+    rms: 0.001,
+    peak: 0.01
+  }).accepted, false);
+});
+
+test('accepts clear speech and catches duplicate final events', () => {
+  const text = 'I rolled the deployment back, drained the queue, and replayed the failed jobs.';
+  assert.equal(assessTranscript({ text, confidence: 0.88, rms: 0.025, peak: 0.18 }).accepted, true);
+  assert.equal(isRecentDuplicate(text, [{ fingerprint: transcriptFingerprint(text), timestamp: Date.now() }]), true);
+});
