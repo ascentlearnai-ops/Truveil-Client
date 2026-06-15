@@ -4,8 +4,7 @@ html { background:var(--night); scroll-behavior:smooth; overflow-x:clip; }
 body { margin:0; color:var(--ink); background:var(--night); font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; letter-spacing:0; overflow-x:clip; }
 a { color:inherit; text-decoration:none; }
 .site-nav { position:fixed; z-index:20; inset:0 0 auto; height:64px; display:grid; grid-template-columns:1fr auto 1fr; align-items:center; padding:0 clamp(20px,4vw,72px); border-bottom:1px solid rgba(255,255,255,.08); background:rgba(7,9,18,.72); backdrop-filter:blur(18px); }
-.brand { display:inline-flex; align-items:center; gap:10px; width:max-content; font-weight:680; }
-.brand span { width:13px; height:13px; border-radius:4px; background:linear-gradient(135deg,#fff 0 22%,var(--blue) 23% 100%); box-shadow:0 0 24px rgba(93,124,255,.65); }
+.brand{display:inline-flex;align-items:center;width:132px;height:36px;overflow:hidden;border-radius:6px}.brand img{width:100%;height:100%;object-fit:cover;object-position:center;transform:scale(1.18)}
 .site-nav nav { display:flex; gap:30px; color:var(--muted); font-size:14px; }.site-nav nav a:hover{color:var(--ink)}
 .nav-cta { justify-self:end; padding:9px 14px; border:1px solid var(--line); border-radius:7px; font-size:13px; font-weight:650; background:rgba(255,255,255,.04); }
 .hero { position:relative; min-height:1020px; height:110vh; padding:142px clamp(22px,7vw,130px) 0; overflow:hidden; border-bottom:1px solid var(--line); }
@@ -44,3 +43,4 @@ footer{min-height:90px;display:flex;align-items:center;justify-content:space-bet
 @media(max-width:620px){.site-nav{height:58px;padding:0 16px}.nav-cta{font-size:0}.nav-cta::after{content:"Download";font-size:12px}.hero{padding-inline:18px;min-height:780px}.hero-copy p{font-size:15px}.hero-actions{flex-direction:column;gap:15px}.app-stage{width:calc(100vw - 24px);bottom:-60px}.steps-band,.privacy-band,.download-band{padding:86px 18px}.steps{grid-template-columns:1fr}.steps li{min-height:190px;border-right:0;border-bottom:1px solid var(--line)}.steps h3{margin-top:40px}footer{padding:28px 18px;flex-direction:column;align-items:flex-start}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reveal{opacity:1;transform:none;transition:none}.app-stage,.app-stage.reveal,.app-stage.reveal.visible{transform:translateX(-50%)}.app-orbit span,.signal-line i{animation:none}}
 .legal-page{width:min(760px,calc(100% - 40px));margin:0 auto;padding:96px 0}.legal-page h1{font-size:clamp(42px,7vw,72px);margin-bottom:28px}.legal-page h2{margin-top:36px;margin-bottom:12px}.legal-page p{color:var(--muted);line-height:1.75;margin-bottom:18px}.legal-page a{color:var(--ink)}
+.app-bar img{width:92px;height:28px;object-fit:cover;border-radius:5px}
