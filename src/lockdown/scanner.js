@@ -2,7 +2,7 @@
 // Windows: detects windows excluded from screen capture.
 // macOS: falls back to suspicious foreground app names.
 
-const { execSync } = require('child_process');
+const { execFileSync } = require('child_process');
 const { EventEmitter } = require('events');
 
 class WindowScanner extends EventEmitter {
@@ -73,7 +73,7 @@ Add-Type -TypeDefinition $code
     `.trim();
 
     try {
-      const result = execSync(`powershell -NoProfile -ExecutionPolicy Bypass -Command "${psScript}"`, {
+      const result = execFileSync('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', psScript], {
         timeout: 5000,
         windowsHide: true
       }).toString().trim();
@@ -98,8 +98,9 @@ Add-Type -TypeDefinition $code
 
   detectSuspiciousProcesses_Windows() {
     try {
-      const rows = execSync(
-        'powershell -NoProfile -ExecutionPolicy Bypass -Command "Get-Process | Where-Object { $_.MainWindowTitle } | Select-Object ProcessName,MainWindowTitle | ConvertTo-Json -Compress"',
+      const rows = execFileSync(
+        'powershell.exe',
+        ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', 'Get-Process | Where-Object { $_.MainWindowTitle } | Select-Object ProcessName,MainWindowTitle | ConvertTo-Json -Compress'],
         { timeout: 5000, windowsHide: true }
       ).toString().trim();
       if (!rows) return [];
@@ -129,7 +130,7 @@ Add-Type -TypeDefinition $code
           return appList
         end tell
       `;
-      const result = execSync(`osascript -e '${script}'`, { timeout: 5000 }).toString().toLowerCase();
+      const result = execFileSync('osascript', ['-e', script], { timeout: 5000 }).toString().toLowerCase();
       const suspicious = this.knownSuspiciousApps.filter(app => result.includes(app));
       return suspicious.map(app => ({
         type: 'SUSPICIOUS_APP_RUNNING',

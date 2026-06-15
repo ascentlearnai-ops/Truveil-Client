@@ -10,7 +10,7 @@
 <body>
   <header class="site-nav">
     <a class="brand" href="#top"><span></span>Truveil Secure</a>
-    <nav>
+    <nav aria-label="Primary navigation">
       <a href="#steps">Check-in</a>
       <a href="#privacy">Privacy</a>
       <a href="#download">Download</a>
@@ -65,7 +65,7 @@
       </div>
       <div class="privacy-list">
         <article class="reveal"><span>Microphone</span><h3>Used for live transcript</h3><p>Fallback audio is temporary and deleted after transcription. Raw audio is not included in the report.</p></article>
-        <article class="reveal"><span>Session focus</span><h3>Foreground changes are recorded</h3><p>The recruiter may receive the app name, window title, and browser host when Windows exposes it.</p></article>
+        <article class="reveal"><span>Session focus</span><h3>Foreground changes are recorded</h3><p>The recruiter may receive the foreground app name, window title, browser URL or host, and detection source when Windows exposes them. Capture-excluded windows may also be reported.</p></article>
         <article class="reveal"><span>Restricted sites</span><h3>Known restricted destinations may close</h3><p>Truveil uses best-effort desktop controls. It does not claim perfect browser-level blocking.</p></article>
         <article class="reveal"><span>Your files</span><h3>Not part of the session</h3><p>Truveil Secure does not read your personal documents, clipboard, messages, or browser history.</p></article>
       </div>
@@ -83,6 +83,9 @@
     <a class="brand" href="#top"><span></span>Truveil Secure</a>
     <p>Consent-based candidate session verification.</p>
     <a href="/downloads/TruveilSecure-Setup-1.0.0.exe.sha256" download>SHA-256 checksum</a>
+    <a href="/privacy.html">Privacy</a>
+    <a href="/terms.html">Terms</a>
+    <a href="/support.html">Support</a>
     <span>2026 Truveil</span>
   </footer>
   <script src="site.js"></script>

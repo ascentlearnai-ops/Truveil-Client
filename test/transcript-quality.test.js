@@ -34,5 +34,16 @@ test('accepts clear speech and catches duplicate final events', () => {
   assert.equal(isRecentDuplicate(
     'I rolled the deployment back and drained the queue before replaying failed jobs.',
     [{ fingerprint: transcriptFingerprint(text), timestamp: Date.now() }]
-  ), true);
+  ), false);
+});
+
+test('does not discard similar but meaningfully different technical answers', () => {
+  const prior = [{
+    timestamp: Date.now(),
+    fingerprint: transcriptFingerprint('I would use a queue to absorb traffic spikes and protect the database while workers process jobs')
+  }];
+  assert.equal(isRecentDuplicate(
+    'I would use a queue to absorb traffic spikes, but I would also add idempotency keys and a dead letter queue',
+    prior
+  ), false);
 });

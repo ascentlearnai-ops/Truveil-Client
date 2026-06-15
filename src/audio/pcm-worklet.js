@@ -6,15 +6,28 @@ class TruveilPcmProcessor extends AudioWorkletProcessor {
     this.ratio = this.sourceRate / this.targetRate;
     this.pending = [];
     this.frameSamples = Math.round(this.targetRate * 0.2);
+    this.sourceBuffer = [];
+    this.sourcePosition = 0;
   }
 
   process(inputs) {
     const input = inputs[0]?.[0];
     if (!input?.length) return true;
 
-    for (let index = 0; index < input.length; index += this.ratio) {
-      const value = Math.max(-1, Math.min(1, input[Math.floor(index)] || 0));
+    this.sourceBuffer.push(...input);
+    while (this.sourcePosition + 1 < this.sourceBuffer.length) {
+      const left = Math.floor(this.sourcePosition);
+      const fraction = this.sourcePosition - left;
+      const value = Math.max(-1, Math.min(1,
+        this.sourceBuffer[left] * (1 - fraction) + this.sourceBuffer[left + 1] * fraction
+      ));
       this.pending.push(value < 0 ? value * 0x8000 : value * 0x7fff);
+      this.sourcePosition += this.ratio;
+    }
+    const consumed = Math.floor(this.sourcePosition);
+    if (consumed > 0) {
+      this.sourceBuffer.splice(0, consumed);
+      this.sourcePosition -= consumed;
     }
 
     while (this.pending.length >= this.frameSamples) {

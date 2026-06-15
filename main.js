@@ -209,7 +209,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
-      sandbox: false
+      sandbox: true
     },
     show: false
   });
@@ -221,8 +221,9 @@ function createWindow() {
     sendInviteCode();
   });
 
-  mainWindow.webContents.session.setPermissionRequestHandler((wc, permission, cb) => {
-    cb(permission === 'media');
+  mainWindow.webContents.session.setPermissionRequestHandler((wc, permission, cb, details = {}) => {
+    const requested = Array.isArray(details.mediaTypes) ? details.mediaTypes : [];
+    cb(permission === 'media' && requested.length > 0 && requested.every(type => type === 'audio'));
   });
 
   mainWindow.on('blur', () => {
@@ -270,41 +271,9 @@ async function joinSessionThroughFunction(sessionCode, candidateName) {
 }
 
 async function validateSession(sessionCode, candidateName) {
-  try {
-    const joined = await joinSessionThroughFunction(sessionCode, candidateName);
-    if (joined?.session) return { ...joined.session, sessionToken: joined.sessionToken, secureJoin: true };
-  } catch (err) {
-    console.warn('[Truveil] secure session join unavailable:', err.message);
-  }
-
-  const client = getSupabase();
-  if (client) {
-    const withPolicy = await client
-      .from('sessions')
-      .select('id,status,allowed_apps,allowed_sites,blocked_sites,blocking_mode')
-      .eq('id', sessionCode)
-      .maybeSingle();
-
-    if (withPolicy.error && !isPolicySchemaError(withPolicy.error)) throw new Error(withPolicy.error.message);
-    if (withPolicy.data) return withPolicy.data;
-
-    if (withPolicy.error && isPolicySchemaError(withPolicy.error)) {
-      const baseOnly = await client
-        .from('sessions')
-        .select('id,status')
-        .eq('id', sessionCode)
-        .maybeSingle();
-      if (baseOnly.error) throw new Error(baseOnly.error.message);
-      if (baseOnly.data) return baseOnly.data;
-    }
-  }
-
-  try {
-    return await fetchSessionFromApi(sessionCode);
-  } catch (err) {
-    console.warn('[Truveil] API session fallback failed:', err.message);
-    return null;
-  }
+  const joined = await joinSessionThroughFunction(sessionCode, candidateName);
+  if (!joined?.session) throw new Error('Secure session join is unavailable. Ask the interviewer to verify the session service.');
+  return { ...joined.session, sessionToken: joined.sessionToken, secureJoin: true };
 }
 
 function sessionChannelName(sessionId) {
@@ -875,7 +844,6 @@ async function activateMonitoring() {
   try { registerSessionShortcuts(); } catch {}
   startPolicyMonitor();
   startOverlayScanner();
-  await updateSessionStatus('active');
   await publishCandidateEvent('candidate_connected', { severity: 'low' });
 }
 

@@ -61,7 +61,7 @@ function assessTranscript({
   };
 }
 
-function isRecentDuplicate(text, recent = [], now = Date.now(), windowMs = 45000) {
+function isRecentDuplicate(text, recent = [], now = Date.now(), windowMs = 12000) {
   const fingerprint = transcriptFingerprint(text);
   if (!fingerprint) return false;
   const words = new Set(fingerprint.split(/\s+/).filter(Boolean));
@@ -69,9 +69,9 @@ function isRecentDuplicate(text, recent = [], now = Date.now(), windowMs = 45000
     if (now - item.timestamp > windowMs) return false;
     if (item.fingerprint === fingerprint) return true;
     const prior = new Set(String(item.fingerprint || '').split(/\s+/).filter(Boolean));
-    if (words.size < 5 || prior.size < 5) return false;
+    if (words.size < 12 || prior.size < 12) return false;
     const overlap = [...words].filter(word => prior.has(word)).length;
-    return overlap / Math.max(words.size, prior.size) >= 0.65;
+    return overlap / Math.max(words.size, prior.size) >= 0.92;
   });
 }
 
