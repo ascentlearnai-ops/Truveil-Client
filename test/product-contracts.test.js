@@ -39,3 +39,9 @@ test('ordinary destinations are observed while known restricted targets are clos
   assert.match(source, /closeForegroundRestrictedTarget/);
   assert.match(source, /policyDecision:\s*decision\.unlisted\s*\?\s*'unlisted'/);
 });
+
+test('candidate join explains disabled Supabase anonymous auth', () => {
+  const source = fs.readFileSync('main.js', 'utf8');
+  assert.match(source, /Supabase Anonymous sign-ins are disabled/);
+  assert.match(source, /Authentication > Providers > Anonymous/);
+});

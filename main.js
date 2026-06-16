@@ -192,7 +192,13 @@ async function ensureAnonymousAuth() {
   const { data: existing } = await client.auth.getSession();
   if (existing.session?.access_token) return existing.session;
   const { data, error } = await client.auth.signInAnonymously();
-  if (error) throw new Error(`Candidate sign-in failed: ${error.message}`);
+  if (error) {
+    const message = String(error.message || '');
+    if (/anonymous/i.test(message) || /disabled/i.test(message)) {
+      throw new Error('Candidate sign-in failed because Supabase Anonymous sign-ins are disabled. Enable Authentication > Providers > Anonymous in Supabase, then create a fresh TRV session code.');
+    }
+    throw new Error(`Candidate sign-in failed: ${message}`);
+  }
   return data.session;
 }
 
