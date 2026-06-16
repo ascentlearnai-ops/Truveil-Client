@@ -40,8 +40,11 @@ test('ordinary destinations are observed while known restricted targets are clos
   assert.match(source, /policyDecision:\s*decision\.unlisted\s*\?\s*'unlisted'/);
 });
 
-test('candidate join explains disabled Supabase anonymous auth', () => {
+test('candidate joins with a TRV code without Supabase anonymous auth', () => {
   const source = fs.readFileSync('main.js', 'utf8');
-  assert.match(source, /Supabase Anonymous sign-ins are disabled/);
-  assert.match(source, /Authentication > Providers > Anonymous/);
+  const joinBlock = source.match(/async function joinSessionThroughFunction[\s\S]*?async function validateSession/);
+  assert.ok(joinBlock, 'joinSessionThroughFunction block should exist');
+  assert.match(joinBlock[0], /candidate-join/);
+  assert.doesNotMatch(joinBlock[0], /signInAnonymously|ensureAnonymousAuth/);
+  assert.match(joinBlock[0], /Bearer \$\{supabaseAnonKey\}/);
 });
