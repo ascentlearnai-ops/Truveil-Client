@@ -181,3 +181,24 @@ footer {
   border-top: 1px solid var(--hairline);
   background: #08090a;
 }
+.brand {
+  width: 136px;
+  height: 32px;
+  overflow: visible;
+  filter: none;
+}
+.brand img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: left center;
+  transform: none;
+}
+.app-bar img {
+  width: 122px;
+  height: 34px;
+  object-fit: contain;
+  object-position: left center;
+  transform: none;
+  border-radius: 0;
+}

@@ -160,3 +160,22 @@ html,body {
   border-color: #23252a;
   background: #0f1011;
 }
+.app-brand {
+  width: 136px;
+  height: 30px;
+  overflow: visible;
+}
+.app-brand img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: left center;
+  transform: none;
+}
+.brand-lock {
+  width: 108px;
+  height: 108px;
+  object-fit: contain;
+  transform: none;
+  border-radius: 0;
+}
