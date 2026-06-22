@@ -44,3 +44,140 @@ footer{min-height:90px;display:flex;align-items:center;justify-content:space-bet
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reveal{opacity:1;transform:none;transition:none}.app-stage,.app-stage.reveal,.app-stage.reveal.visible{transform:translateX(-50%)}.app-orbit span,.signal-line i{animation:none}}
 .legal-page{width:min(760px,calc(100% - 40px));margin:0 auto;padding:96px 0}.legal-page h1{font-size:clamp(42px,7vw,72px);margin-bottom:28px}.legal-page h2{margin-top:36px;margin-bottom:12px}.legal-page p{color:var(--muted);line-height:1.75;margin-bottom:18px}.legal-page a{color:var(--ink)}
 .app-bar img{width:92px;height:28px;object-fit:cover;border-radius:5px}
+
+/* Premium monochrome pass: calm candidate-facing verification */
+:root {
+  --ink: #fbfbfb;
+  --muted: #8d939d;
+  --line: rgba(255,255,255,.105);
+  --blue: #ffffff;
+  --blue2: #d9ddff;
+  --night: #08090a;
+  --soft: #0f1011;
+  --panel: #111214;
+  --hairline: #23252a;
+  --focus: #5e6ad2;
+  --status: #e4f222;
+}
+body {
+  background:
+    radial-gradient(circle at 50% -16%, rgba(255,255,255,.14), transparent 36rem),
+    radial-gradient(circle at 82% 32%, rgba(94,106,210,.12), transparent 28rem),
+    var(--night);
+  font-weight: 400;
+}
+.site-nav {
+  height: 58px;
+  border-bottom-color: var(--hairline);
+  background: rgba(8,9,10,.82);
+}
+.brand { width: 122px; filter: grayscale(1) contrast(1.2); }
+.site-nav nav { gap: 24px; color: #8a8f98; font-size: 13px; }
+.nav-cta {
+  border-color: #f7f8f8;
+  border-radius: 999px;
+  color: #f7f8f8;
+  background: transparent;
+  font-weight: 510;
+}
+.hero {
+  min-height: 940px;
+  background:
+    linear-gradient(rgba(255,255,255,.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.028) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+.hero::after {
+  width: 980px;
+  height: 650px;
+  background: radial-gradient(circle, rgba(255,255,255,.16), rgba(94,106,210,.1) 34%, transparent 70%);
+}
+.eyebrow {
+  color: #d0d6e0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-weight: 400;
+  letter-spacing: .18em;
+}
+h1, h2 {
+  color: #f7f8f8;
+  font-weight: 400;
+  letter-spacing: -.025em;
+}
+h3, strong { font-weight: 590; }
+h1 { font-size: clamp(56px, 6.4vw, 96px); line-height: .98; }
+.hero-copy p,
+.section-copy p,
+.download-band p,
+.privacy-list p {
+  color: #8a8f98;
+}
+.primary-action {
+  min-height: 44px;
+  border-radius: 999px;
+  background: #f7f8f8;
+  color: #08090a;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.18), 0 18px 50px rgba(0,0,0,.45);
+  font-weight: 590;
+}
+.text-action { color: #d0d6e0; }
+.text-action span { color: var(--status); }
+.app-stage {
+  left: 50%;
+  bottom: -18px;
+  border-color: var(--hairline);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.012)), var(--panel);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.025), 0 42px 100px rgba(0,0,0,.62);
+}
+.app-bar,
+.steps,
+.steps li,
+.privacy-list article {
+  border-color: var(--hairline);
+}
+.app-body {
+  background: radial-gradient(circle at 50% 24%, rgba(255,255,255,.08), transparent 38%);
+}
+.app-orbit {
+  border-color: rgba(255,255,255,.22);
+}
+.app-orbit span { border-color: rgba(255,255,255,.1); }
+.app-orbit strong,
+.app-kicker,
+.steps span,
+.privacy-list span {
+  color: #d0d6e0;
+}
+.code-preview {
+  border-color: var(--hairline);
+  background: #08090a;
+  color: #f7f8f8;
+}
+.app-button {
+  border-radius: 999px;
+  background: #f7f8f8;
+  color: #08090a;
+}
+.signal-line i {
+  background: linear-gradient(#f7f8f8, #5e6ad2);
+}
+.steps-band,
+.privacy-band,
+.download-band {
+  border-bottom-color: var(--hairline);
+}
+.steps li {
+  background: linear-gradient(180deg, rgba(255,255,255,.02), transparent);
+}
+.privacy-band {
+  background:
+    radial-gradient(circle at 10% 20%, rgba(255,255,255,.07), transparent 26rem),
+    var(--night);
+}
+.download-band::before {
+  background: radial-gradient(circle, rgba(255,255,255,.15), rgba(94,106,210,.08) 42%, transparent 70%);
+}
+footer {
+  border-top: 1px solid var(--hairline);
+  background: #08090a;
+}
