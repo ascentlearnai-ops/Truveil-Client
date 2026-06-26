@@ -275,9 +275,29 @@ async function joinSessionThroughFunction(sessionCode, candidateName) {
 }
 
 async function validateSession(sessionCode, candidateName) {
-  const joined = await joinSessionThroughFunction(sessionCode, candidateName);
-  if (!joined?.session) throw new Error('Secure session join is unavailable. Ask the interviewer to verify the session service.');
-  return { ...joined.session, sessionToken: joined.sessionToken, secureJoin: true };
+  try {
+    const joined = await joinSessionThroughFunction(sessionCode, candidateName);
+    if (joined?.session) return { ...joined.session, sessionToken: joined.sessionToken, secureJoin: true };
+  } catch (err) {
+    console.warn('[Truveil] secure candidate join unavailable:', err.message);
+  }
+
+  const apiSession = await fetchSessionFromApi(sessionCode).catch((err) => {
+    console.warn('[Truveil] API session lookup failed:', err.message);
+    return null;
+  });
+  if (apiSession) return { ...apiSession, secureJoin: false };
+
+  const client = getSupabase();
+  if (!client) throw new Error('Session service is not configured. Ask the interviewer to rebuild the app with Supabase settings.');
+  const { data, error } = await client
+    .from('sessions')
+    .select('*')
+    .eq('id', sessionCode)
+    .maybeSingle();
+  if (error) throw new Error(`Session lookup failed: ${error.message}`);
+  if (!data) throw new Error('Session not found. Check the code your recruiter sent you.');
+  return { ...data, secureJoin: false };
 }
 
 function sessionChannelName(sessionId) {
