@@ -61,7 +61,7 @@ function assessTranscript({
   };
 }
 
-function isRecentDuplicate(text, recent = [], now = Date.now(), windowMs = 12000) {
+function isRecentDuplicate(text, recent = [], now = Date.now(), windowMs = 6500) {
   const fingerprint = transcriptFingerprint(text);
   if (!fingerprint) return false;
   const words = new Set(fingerprint.split(/\s+/).filter(Boolean));

@@ -1,8 +1,8 @@
 // Truveil Secure - Candidate Renderer
 const $ = id => document.getElementById(id);
-const AUDIO_SEGMENT_MS = 5000;
-const TRANSCRIPT_BATCH_MS = 900;
-const TRANSCRIPT_BATCH_MAX_WORDS = 16;
+const AUDIO_SEGMENT_MS = 3000;
+const TRANSCRIPT_BATCH_MS = 450;
+const TRANSCRIPT_BATCH_MAX_WORDS = 10;
 const SPEECH_RMS_THRESHOLD = 0.012;
 const SPEECH_PEAK_THRESHOLD = 0.06;
 
@@ -322,7 +322,7 @@ function sendInterimTranscript(text) {
   const cleanText = String(text || '').replace(/\s+/g, ' ').trim();
   const now = Date.now();
   if (!cleanText || cleanText.length < 4 || sessionEnding) return;
-  if (now - lastInterimSentAt < 550 && cleanText.length < lastInterimText.length + 8) return;
+  if (now - lastInterimSentAt < 240 && cleanText.length < lastInterimText.length + 4) return;
   if (cleanText === lastInterimText) return;
   lastInterimSentAt = now;
   lastInterimText = cleanText;
@@ -669,7 +669,7 @@ async function startLiveTranscription() {
     punctuate: 'true',
     filler_words: 'true',
     interim_results: 'true',
-    endpointing: '450',
+    endpointing: '250',
     utterance_end_ms: '1000',
     vad_events: 'true'
   });
