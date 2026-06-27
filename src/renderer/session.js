@@ -1,6 +1,6 @@
 // Truveil Secure - Candidate Renderer
 const $ = id => document.getElementById(id);
-const AUDIO_SEGMENT_MS = 3000;
+const AUDIO_SEGMENT_MS = 2500;
 const TRANSCRIPT_BATCH_MS = 450;
 const TRANSCRIPT_BATCH_MAX_WORDS = 10;
 const SPEECH_RMS_THRESHOLD = 0.012;
@@ -58,6 +58,8 @@ let liveFinalSegments = [];
 let liveFinalConfidences = [];
 let liveSegmentMaxRms = 0;
 let liveSegmentMaxPeak = 0;
+let liveStreamEpoch = 0;
+let liveUtteranceId = 0;
 let interviewStarted = false;
 
 const statusPill = $('statusPill');
@@ -318,11 +320,11 @@ async function sendTranscriptText(text) {
   scheduleTranscriptFlush();
 }
 
-function sendInterimTranscript(text) {
+function sendInterimTranscript(text, metadata = {}) {
   const cleanText = String(text || '').replace(/\s+/g, ' ').trim();
   const now = Date.now();
   if (!cleanText || cleanText.length < 4 || sessionEnding) return;
-  if (now - lastInterimSentAt < 240 && cleanText.length < lastInterimText.length + 4) return;
+  if (now - lastInterimSentAt < 250 && cleanText.length < lastInterimText.length + 4) return;
   if (cleanText === lastInterimText) return;
   lastInterimSentAt = now;
   lastInterimText = cleanText;
@@ -333,6 +335,10 @@ function sendInterimTranscript(text) {
     sequence: transcriptSequence,
     source: 'deepgram-nova-3-direct',
     interim: true,
+    streamEpoch: Number.isFinite(Number(metadata.streamEpoch)) ? Number(metadata.streamEpoch) : liveStreamEpoch,
+    utteranceId: Number.isFinite(Number(metadata.utteranceId)) ? Number(metadata.utteranceId) : liveUtteranceId,
+    segmentId: metadata.segmentId || `live-${liveStreamEpoch}-${liveUtteranceId}`,
+    revision: Number(metadata.revision) || 0,
     rms: lastRms,
     peak: lastPeak
   }).catch(() => {});
@@ -535,6 +541,8 @@ function startTranscriptStreaming() {
   liveFinalConfidences = [];
   liveSegmentMaxRms = 0;
   liveSegmentMaxPeak = 0;
+  liveStreamEpoch = 0;
+  liveUtteranceId = 0;
   transcriptBuffer = [];
   transcriptBufferStartedAt = 0;
   clearTimeout(transcriptFlushTimer);
@@ -568,7 +576,7 @@ function publishLiveTranscript(message = {}) {
   if (!text || sessionEnding) return;
   lastSpeechLevelAt = Date.now();
   if (message.interim) {
-    sendInterimTranscript(text);
+    sendInterimTranscript(text, message);
     updateAudioUi({ status: 'Transcribing live' });
     return;
   }
@@ -581,6 +589,9 @@ function publishLiveTranscript(message = {}) {
     source: message.source || 'deepgram-nova-3-live',
     segmentId: message.segmentId || `live-${transcriptSequence}`,
     revision: Number(message.revision) || 0,
+    streamEpoch: Number.isFinite(Number(message.streamEpoch)) ? Number(message.streamEpoch) : liveStreamEpoch,
+    utteranceId: Number.isFinite(Number(message.utteranceId)) ? Number(message.utteranceId) : liveUtteranceId,
+    finalReason: message.finalReason || 'speech_final',
     transcriptConfidence: message.confidence,
     rms: message.rms ?? liveSegmentMaxRms,
     peak: message.peak ?? liveSegmentMaxPeak
@@ -604,21 +615,26 @@ function average(values = []) {
   return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
 }
 
-function flushLiveFinal() {
+function flushLiveFinal(finalReason = 'speech_final') {
   const text = liveFinalSegments.join(' ').replace(/\s+/g, ' ').trim();
   if (!text) return;
   const sequence = transcriptSequence;
+  const currentUtteranceId = liveUtteranceId;
   publishLiveTranscript({
     text,
     interim: false,
     confidence: average(liveFinalConfidences),
     source: 'deepgram-nova-3-direct',
-    segmentId: `live-${sequence}`,
-    revision: 0,
+    segmentId: `live-${liveStreamEpoch}-${currentUtteranceId}`,
+    revision: liveFinalSegments.length,
+    streamEpoch: liveStreamEpoch,
+    utteranceId: currentUtteranceId,
+    finalReason,
     rms: liveSegmentMaxRms,
     peak: liveSegmentMaxPeak,
     timestamp: Date.now()
   });
+  liveUtteranceId++;
   liveFinalSegments = [];
   liveFinalConfidences = [];
   liveSegmentMaxRms = 0;
@@ -669,7 +685,7 @@ async function startLiveTranscription() {
     punctuate: 'true',
     filler_words: 'true',
     interim_results: 'true',
-    endpointing: '250',
+    endpointing: '300',
     utterance_end_ms: '1000',
     vad_events: 'true'
   });
@@ -695,7 +711,7 @@ async function startLiveTranscription() {
       if (liveTranscriptionSocket?.readyState === WebSocket.OPEN) {
         liveTranscriptionSocket.send(JSON.stringify({ type: 'KeepAlive' }));
       }
-    }, 8000);
+    }, 4000);
   };
   liveTranscriptionSocket.onmessage = event => {
     try {
@@ -705,7 +721,8 @@ async function startLiveTranscription() {
         return;
       }
       if (message.type === 'UtteranceEnd') {
-        flushLiveFinal();
+        if (Number(message.last_word_end) === -1) return;
+        flushLiveFinal('utterance_end');
         return;
       }
       const alternative = message.channel?.alternatives?.[0];
@@ -717,7 +734,7 @@ async function startLiveTranscription() {
         if (confidence > 0) liveFinalConfidences.push(confidence);
       }
       if (message.speech_final) {
-        flushLiveFinal();
+        flushLiveFinal('speech_final');
         return;
       }
       const combined = [...liveFinalSegments, message.is_final ? '' : text].filter(Boolean).join(' ');
@@ -726,8 +743,10 @@ async function startLiveTranscription() {
         interim: true,
         confidence,
         source: 'deepgram-nova-3-direct',
-        segmentId: `live-${transcriptSequence}`,
-        revision: message.is_final ? 1 : 0
+        segmentId: `live-${liveStreamEpoch}-${liveUtteranceId}`,
+        revision: message.is_final ? liveFinalSegments.length : 0,
+        streamEpoch: liveStreamEpoch,
+        utteranceId: liveUtteranceId
       });
     } catch {}
   };
@@ -737,6 +756,12 @@ async function startLiveTranscription() {
     if (sessionEnding || audioFallbackActive) return;
     liveReconnectAttempts++;
     if (liveReconnectAttempts <= 2) {
+      liveStreamEpoch++;
+      liveUtteranceId = 0;
+      liveFinalSegments = [];
+      liveFinalConfidences = [];
+      liveSegmentMaxRms = 0;
+      liveSegmentMaxPeak = 0;
       setTimeout(() => startLiveTranscription().catch(() => {}), 900 * liveReconnectAttempts);
     } else {
       startAudioFallback('live relay unavailable');

@@ -376,7 +376,7 @@ async function publishCandidateEvent(type, metadata = {}) {
   }
 }
 
-async function publishCandidateTranscript({ text, timestamp, durationMs, sequence, segmentId, revision, source, interim, transcriptConfidence, rms, peak }) {
+async function publishCandidateTranscript({ text, timestamp, durationMs, sequence, segmentId, revision, streamEpoch, utteranceId, finalReason, source, interim, transcriptConfidence, rms, peak }) {
   if (!activeSession || !realtimeChannel) return { ok: false, error: 'No active realtime session.' };
 
   const assessed = assessTranscript({
@@ -404,6 +404,9 @@ async function publishCandidateTranscript({ text, timestamp, durationMs, sequenc
     sequence: Number.isFinite(Number(sequence)) ? Math.max(0, Number(sequence)) : undefined,
     segmentId: segmentId || `${activeSession.sessionCode}-${Number(sequence || 0)}`,
     revision: Math.max(0, Number(revision) || 0),
+    streamEpoch: Number.isFinite(Number(streamEpoch)) ? Number(streamEpoch) : undefined,
+    utteranceId: Number.isFinite(Number(utteranceId)) ? Number(utteranceId) : undefined,
+    finalReason: finalReason || (interim ? 'interim' : 'speech_final'),
     source: source || 'candidate-transcript',
     interim: Boolean(interim),
     transcriptConfidence: Number.isFinite(Number(transcriptConfidence)) ? Number(transcriptConfidence) : undefined,
@@ -487,6 +490,8 @@ async function uploadCandidateAudioChunk(data = {}) {
           timestamp: data.timestamp || Date.now(),
           durationMs: data.durationMs,
           sequence: data.sequence,
+          segmentId: `fallback-${Number(data.sequence || 0)}-${data.timestamp || Date.now()}`,
+          finalReason: 'fallback_chunk',
           source: result.source || 'secure-chunk-fallback',
           transcriptConfidence: result.confidence,
           rms: data.rms,

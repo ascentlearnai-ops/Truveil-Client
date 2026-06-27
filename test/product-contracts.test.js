@@ -22,6 +22,20 @@ test('candidate uses secure live transcription before fallback audio', () => {
   assert.match(source, /startAudioFallback/);
 });
 
+test('live transcript cadence uses stable utterance ids and balanced fallback chunks', () => {
+  const renderer = fs.readFileSync('src/renderer/session.js', 'utf8');
+  const main = fs.readFileSync('main.js', 'utf8');
+  assert.match(renderer, /const AUDIO_SEGMENT_MS = 2500/);
+  assert.match(renderer, /endpointing:\s*'300'/);
+  assert.match(renderer, /utterance_end_ms:\s*'1000'/);
+  assert.match(renderer, /setInterval\(\(\) => \{[\s\S]*KeepAlive[\s\S]*\}, 4000\)/);
+  assert.match(renderer, /liveStreamEpoch/);
+  assert.match(renderer, /liveUtteranceId/);
+  assert.match(main, /streamEpoch/);
+  assert.match(main, /utteranceId/);
+  assert.match(main, /finalReason/);
+});
+
 test('runtime config does not contain transcription provider secrets', () => {
   const config = fs.readFileSync('src/config/runtime-config.json', 'utf8');
   assert.doesNotMatch(config, /deepgram|groq/i);
