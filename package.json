@@ -6,6 +6,7 @@
   "author": "Truveil Inc.",
   "scripts": {
     "test": "node --test test/*.test.js",
+    "release:check": "node scripts/check-release.js",
     "check": "node --check main.js && node --check preload.js && node --check src/renderer/session.js",
     "prestart": "node scripts/write-runtime-config.js",
     "start": "electron .",
