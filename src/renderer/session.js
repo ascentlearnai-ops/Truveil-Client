@@ -74,6 +74,13 @@ const uploadStatusEl = $('uploadStatus');
 const audioStateEl = $('audioState');
 const audioChunkCountEl = $('audioChunkCount');
 const waveformEl = $('micWaveform');
+const instructionTrack = $('instructionTrack');
+const instructionViewport = $('instructionViewport');
+const instructionDots = $('instructionDots');
+const instructionPrev = $('instructionPrev');
+const instructionNext = $('instructionNext');
+let instructionIndex = 0;
+let instructionSwipeStart = null;
 
 function setStatus(kind, text) {
   statusPill.classList.remove('active', 'warn');
@@ -86,6 +93,54 @@ function toast(msg, kind = 'info') {
   toastEl.className = `toast visible ${kind}`;
   clearTimeout(toast._t);
   toast._t = setTimeout(() => toastEl.classList.remove('visible'), 3200);
+}
+
+function updateInstructionCarousel(index = instructionIndex) {
+  const cards = Array.from(instructionTrack?.children || []);
+  if (!cards.length) return;
+  instructionIndex = Math.max(0, Math.min(cards.length - 1, index));
+  instructionTrack.style.transform = `translateX(-${instructionIndex * 100}%)`;
+  cards.forEach((card, cardIndex) => {
+    card.toggleAttribute('aria-hidden', cardIndex !== instructionIndex);
+  });
+  Array.from(instructionDots?.children || []).forEach((dot, dotIndex) => {
+    dot.classList.toggle('active', dotIndex === instructionIndex);
+  });
+  if (instructionPrev) instructionPrev.disabled = instructionIndex === 0;
+  if (instructionNext) instructionNext.disabled = instructionIndex === cards.length - 1;
+}
+
+function setupInstructionCarousel() {
+  const cards = Array.from(instructionTrack?.children || []);
+  if (!cards.length || !instructionDots) return;
+  instructionDots.innerHTML = '';
+  cards.forEach((_, index) => {
+    const dot = document.createElement('button');
+    dot.type = 'button';
+    dot.setAttribute('aria-label', `Show instruction ${index + 1}`);
+    dot.addEventListener('click', () => updateInstructionCarousel(index));
+    instructionDots.appendChild(dot);
+  });
+  instructionPrev?.addEventListener('click', () => updateInstructionCarousel(instructionIndex - 1));
+  instructionNext?.addEventListener('click', () => updateInstructionCarousel(instructionIndex + 1));
+  instructionViewport?.addEventListener('pointerdown', event => {
+    instructionSwipeStart = { x: event.clientX, y: event.clientY };
+    instructionViewport.setPointerCapture?.(event.pointerId);
+  });
+  instructionViewport?.addEventListener('pointerup', event => {
+    if (!instructionSwipeStart) return;
+    const dx = event.clientX - instructionSwipeStart.x;
+    const dy = event.clientY - instructionSwipeStart.y;
+    instructionSwipeStart = null;
+    if (Math.abs(dx) < 42 || Math.abs(dx) < Math.abs(dy)) return;
+    updateInstructionCarousel(instructionIndex + (dx < 0 ? 1 : -1));
+  });
+  instructionViewport?.addEventListener('keydown', event => {
+    if (event.key === 'ArrowLeft') updateInstructionCarousel(instructionIndex - 1);
+    if (event.key === 'ArrowRight') updateInstructionCarousel(instructionIndex + 1);
+  });
+  instructionViewport?.setAttribute('tabindex', '0');
+  updateInstructionCarousel(0);
 }
 
 function fmtElapsed(ms) {
@@ -906,4 +961,5 @@ $('quitBtn').addEventListener('click', () => {
 });
 
 setStatus(null, 'Not started');
+setupInstructionCarousel();
 setTimeout(() => sessionCodeInput.focus(), 400);

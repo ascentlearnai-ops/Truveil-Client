@@ -58,10 +58,36 @@
       <h1>Enter your <span class="gradient-text">session code</span></h1>
       <p class="sub">Join the verified interview room. Keep Truveil Secure open while you take your call.</p>
 
-      <div class="code-flow">
-        <div><span>1</span><strong>Paste code</strong><small>Use the TRV code from your recruiter.</small></div>
-        <div><span>2</span><strong>Confirm</strong><small>Approve the session check before your call.</small></div>
-        <div><span>3</span><strong>Begin</strong><small>Truveil stays open in the background.</small></div>
+      <div class="instruction-carousel" aria-label="How to use Truveil Secure">
+        <div class="instruction-viewport" id="instructionViewport">
+          <div class="instruction-track" id="instructionTrack">
+            <article class="instruction-card" aria-label="Step 1 of 4">
+              <span>01</span>
+              <strong>Open your invite</strong>
+              <p>Use the link from your recruiter, or paste the TRV code they gave you.</p>
+            </article>
+            <article class="instruction-card" aria-label="Step 2 of 4">
+              <span>02</span>
+              <strong>Review and consent</strong>
+              <p>Confirm the session notice before anything starts. Truveil explains what is used.</p>
+            </article>
+            <article class="instruction-card" aria-label="Step 3 of 4">
+              <span>03</span>
+              <strong>Allow microphone</strong>
+              <p>Grant mic access for live transcription. You will see a simple voice health meter.</p>
+            </article>
+            <article class="instruction-card" aria-label="Step 4 of 4">
+              <span>04</span>
+              <strong>Keep this open</strong>
+              <p>Join Zoom, Meet, or Teams normally and leave Truveil Secure running until the interview ends.</p>
+            </article>
+          </div>
+        </div>
+        <div class="instruction-controls">
+          <button class="instruction-nav" id="instructionPrev" type="button" aria-label="Previous instruction">Prev</button>
+          <div class="instruction-dots" id="instructionDots" aria-hidden="true"></div>
+          <button class="instruction-nav" id="instructionNext" type="button" aria-label="Next instruction">Next</button>
+        </div>
       </div>
 
       <div class="form">

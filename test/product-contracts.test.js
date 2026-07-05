@@ -13,6 +13,20 @@ test('candidate active screen does not reveal recruiter risk analysis', () => {
   assert.doesNotMatch(html, /AI-assistance risk|integrity percent|cheating score/i);
 });
 
+test('candidate setup includes swipeable instructional cards', () => {
+  const html = fs.readFileSync('src/renderer/index.html', 'utf8');
+  const renderer = fs.readFileSync('src/renderer/session.js', 'utf8');
+  assert.match(html, /instruction-carousel/);
+  assert.match(html, /Open your invite/);
+  assert.match(html, /Review and consent/);
+  assert.match(html, /Allow microphone/);
+  assert.match(html, /Keep this open/);
+  assert.match(renderer, /setupInstructionCarousel/);
+  assert.match(renderer, /pointerdown/);
+  assert.match(renderer, /ArrowRight/);
+  assert.doesNotMatch(html, /AI-assistance risk|integrity percent|cheating score/i);
+});
+
 test('candidate uses secure live transcription before fallback audio', () => {
   const source = fs.readFileSync('src/renderer/session.js', 'utf8');
   assert.match(source, /startLiveTranscription\(\)/);
