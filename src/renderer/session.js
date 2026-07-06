@@ -571,9 +571,9 @@ function startTranscriptWatchdog() {
   transcriptWatchdogTimer = setInterval(() => {
     if (sessionEnding || audioFallbackActive || !sessionStart) return;
     const now = Date.now();
-    const sessionOldEnough = now - sessionStart > 18000;
+    const sessionOldEnough = now - sessionStart > 8000;
     const heardSpeechRecently = now - lastSpeechLevelAt < 8000;
-    const transcriptStale = !lastFinalTranscriptAt || now - lastFinalTranscriptAt > 22000;
+    const transcriptStale = !lastFinalTranscriptAt || now - lastFinalTranscriptAt > 9000;
     if (sessionOldEnough && heardSpeechRecently && transcriptStale) {
       logEvent('Live transcript stalled; switching to audio fallback.', 'warn');
       startAudioFallback('transcript watchdog timeout');
@@ -747,7 +747,7 @@ async function startLiveTranscription() {
   (activeConnection.technicalVocabulary || []).slice(0, 30).forEach(term => params.append('keyterm', term));
   const url = `wss://api.deepgram.com/v1/listen?${params.toString()}`;
   try {
-    liveTranscriptionSocket = new WebSocket(url, ['bearer', tokenResult.accessToken]);
+    liveTranscriptionSocket = new WebSocket(url, ['token', tokenResult.accessToken]);
     liveTranscriptionSocket.binaryType = 'arraybuffer';
   } catch {
     startAudioFallback('live relay connection failed');

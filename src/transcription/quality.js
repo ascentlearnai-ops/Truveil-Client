@@ -7,6 +7,10 @@ const HALLUCINATION_PATTERNS = [
   /^(the\s+){3,}/i
 ];
 
+const MIN_FINAL_CONFIDENCE = 0.45;
+const MIN_SPEECH_RMS = 0.0045;
+const MIN_SPEECH_PEAK = 0.03;
+
 function normalizeTranscript(text) {
   return String(text || '').replace(/\s+/g, ' ').trim();
 }
@@ -39,12 +43,12 @@ function assessTranscript({
   const numericRms = Number(rms);
   const numericPeak = Number(peak);
   const hasAudioMetrics = Number.isFinite(numericRms) || Number.isFinite(numericPeak);
-  const heardSpeech = !hasAudioMetrics || numericRms >= 0.007 || numericPeak >= 0.045;
+  const heardSpeech = !hasAudioMetrics || numericRms >= MIN_SPEECH_RMS || numericPeak >= MIN_SPEECH_PEAK;
 
   if (!interim && !heardSpeech) {
     return { accepted: false, reason: 'no-speech-energy', text: normalized };
   }
-  if (!interim && hasConfidence && numericConfidence < 0.52) {
+  if (!interim && hasConfidence && numericConfidence < MIN_FINAL_CONFIDENCE) {
     return { accepted: false, reason: 'low-confidence', text: normalized };
   }
   if (!interim && words === 1 && normalized.length < 5 && hasConfidence && numericConfidence < 0.72) {

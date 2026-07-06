@@ -501,8 +501,12 @@ async function uploadCandidateAudioChunk(data = {}) {
       return { ok: true, skipped: !result.text, source: result.source || 'secure-chunk-fallback' };
     } catch (err) {
       console.warn('[Truveil] secure fallback transcription failed:', err.message);
-      await publishCandidateEvent('audio_upload_failed', { severity: 'medium', error: err.message });
-      return { ok: false, error: err.message };
+      await publishCandidateEvent('audio_secure_transcribe_failed', {
+        severity: 'low',
+        error: err.message,
+        fallback: 'storage'
+      });
+      // Continue to storage-backed fallback so the admin app can transcribe the segment.
     }
   }
 

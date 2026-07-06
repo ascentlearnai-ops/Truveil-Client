@@ -37,6 +37,11 @@ test('accepts clear speech and catches duplicate final events', () => {
   ), false);
 });
 
+test('keeps quiet but credible speech instead of treating it as silence', () => {
+  const text = 'I changed the cache key and verified the fix with a canary deploy.';
+  assert.equal(assessTranscript({ text, confidence: 0.72, rms: 0.005, peak: 0.032 }).accepted, true);
+});
+
 test('does not discard similar but meaningfully different technical answers', () => {
   const prior = [{
     timestamp: Date.now(),

@@ -58,6 +58,7 @@ test('candidate uses secure live transcription before fallback audio', () => {
   assert.match(source, /startLiveTranscription\(\)/);
   assert.match(source, /getTranscriptionToken/);
   assert.match(source, /AudioWorkletNode/);
+  assert.match(source, /new WebSocket\(url, \['token', tokenResult\.accessToken\]\)/);
   assert.doesNotMatch(source, /SpeechRecognition|webkitSpeechRecognition/);
   assert.match(source, /startAudioFallback/);
 });
@@ -66,6 +67,8 @@ test('live transcript cadence uses stable utterance ids and balanced fallback ch
   const renderer = fs.readFileSync('src/renderer/session.js', 'utf8');
   const main = fs.readFileSync('main.js', 'utf8');
   assert.match(renderer, /const AUDIO_SEGMENT_MS = 2500/);
+  assert.match(renderer, /sessionStart > 8000/);
+  assert.match(renderer, /lastFinalTranscriptAt > 9000/);
   assert.match(renderer, /endpointing:\s*'300'/);
   assert.match(renderer, /utterance_end_ms:\s*'1000'/);
   assert.match(renderer, /setInterval\(\(\) => \{[\s\S]*KeepAlive[\s\S]*\}, 4000\)/);
@@ -74,6 +77,8 @@ test('live transcript cadence uses stable utterance ids and balanced fallback ch
   assert.match(main, /streamEpoch/);
   assert.match(main, /utteranceId/);
   assert.match(main, /finalReason/);
+  assert.match(main, /audio_secure_transcribe_failed/);
+  assert.match(main, /storage-backed fallback/);
 });
 
 test('runtime config does not contain transcription provider secrets', () => {
