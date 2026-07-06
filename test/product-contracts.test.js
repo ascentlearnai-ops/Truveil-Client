@@ -6,6 +6,9 @@ test('client website downloads the local Windows installer', () => {
   const html = fs.readFileSync('index.html', 'utf8');
   assert.match(html, /\/downloads\/TruveilSecure-Setup-1\.0\.0\.exe/);
   assert.doesNotMatch(html, /github\.com\/.*releases/i);
+  assert.match(html, /secure-demo/);
+  assert.match(html, /secure-window/);
+  assert.doesNotMatch(html, /candidate-app-real\.png|truveil-horizontal-transparent\.png/i);
 });
 
 test('candidate active screen does not reveal recruiter risk analysis', () => {

@@ -685,3 +685,44 @@ body {
     animation: none;
   }
 }
+
+/* Crisp in-app brand marks: no raster logo dependency in chrome */
+.app-brand {
+  width: auto;
+  min-width: 0;
+  height: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  overflow: visible;
+  color: #f7f8f8;
+}
+
+.app-brand img {
+  display: none;
+}
+
+.app-brand strong {
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.app-glyph,
+.brand-lock {
+  width: 28px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255,255,255,.24);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+  color: #f7f8f8;
+  font-size: 12px;
+  font-weight: 740;
+}
+
+.brand-lock {
+  position: relative;
+  z-index: 2;
+}

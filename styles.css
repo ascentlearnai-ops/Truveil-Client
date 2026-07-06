@@ -452,3 +452,226 @@ footer {
     animation: none;
   }
 }
+
+/* Designer correction: remove generated-looking raster product art */
+.brand,
+.app-bar div,
+.secure-window-bar {
+  gap: 9px;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  border-radius: 0;
+  filter: none;
+  font-weight: 650;
+}
+
+.brand img,
+.app-bar img {
+  display: none;
+}
+
+.brand-glyph {
+  width: 28px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255,255,255,.24);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+  color: #f7f8f8;
+  font-size: 12px;
+  font-weight: 740;
+  letter-spacing: 0;
+}
+
+.brand-glyph.mini {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  font-size: 10px;
+}
+
+.brand span:last-child {
+  color: #f7f8f8;
+  font-size: 14px;
+  letter-spacing: .01em;
+}
+
+.app-bar strong,
+.secure-window-bar strong {
+  color: #f7f8f8;
+  font-size: 12px;
+}
+
+.secure-demo {
+  position: relative;
+  max-width: 1180px;
+  margin: 54px auto 0;
+}
+
+.secure-window {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--hairline);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.014)), #0f1011;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.025), 0 36px 90px rgba(0,0,0,.55);
+}
+
+.secure-window::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(120deg, transparent 35%, rgba(255,255,255,.07), transparent 62%);
+  transform: translateX(-120%);
+  animation: surfaceSweep 8s ease-in-out infinite;
+}
+
+.secure-window-bar {
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.secure-window-bar em {
+  margin-left: auto;
+  color: #d9ddff;
+  font-size: 12px;
+  font-style: normal;
+}
+
+.secure-window-body {
+  display: grid;
+  grid-template-columns: minmax(240px, .75fr) minmax(300px, .95fr) minmax(240px, .75fr);
+  gap: 1px;
+  background: var(--hairline);
+}
+
+.instruction-stack,
+.code-module,
+.voice-module {
+  min-height: 280px;
+  padding: clamp(22px, 3vw, 36px);
+  background: #0f1011;
+}
+
+.instruction-stack {
+  display: grid;
+  align-content: center;
+}
+
+.instruction-stack span,
+.code-module label,
+.voice-module span {
+  color: #858b95;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.instruction-stack strong {
+  display: block;
+  margin-top: 16px;
+  color: #f7f8f8;
+  font-size: 28px;
+  font-weight: 520;
+}
+
+.instruction-stack p {
+  margin: 10px 0 0;
+  color: #8a8f98;
+  line-height: 1.65;
+}
+
+.code-module {
+  display: grid;
+  align-content: center;
+  gap: 14px;
+}
+
+.code-module strong {
+  display: grid;
+  place-items: center;
+  min-height: 76px;
+  border: 1px solid #2a2c31;
+  border-radius: 12px;
+  background: #08090a;
+  color: #f7f8f8;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: clamp(24px, 3vw, 36px);
+  letter-spacing: .12em;
+}
+
+.code-module button {
+  min-height: 44px;
+  border: 0;
+  border-radius: 999px;
+  background: #f7f8f8;
+  color: #08090a;
+  font-weight: 650;
+}
+
+.voice-module {
+  display: grid;
+  align-content: center;
+}
+
+.voice-module .signal-line {
+  margin-top: 30px;
+}
+
+.candidate-shot {
+  display: none;
+}
+
+@media(max-width:900px) {
+  .secure-window-body {
+    grid-template-columns: 1fr;
+  }
+
+  .instruction-stack,
+  .code-module,
+  .voice-module {
+    min-height: 220px;
+  }
+}
+
+@media(prefers-reduced-motion:reduce) {
+  .secure-window::after {
+    animation: none;
+  }
+}
+
+/* Final viewport correction: keep the candidate page sharp without fake product art. */
+.hero .reveal {
+  opacity: 1;
+}
+
+.hero-copy.reveal {
+  transform: none;
+}
+
+.app-stage.reveal,
+.app-stage.reveal.visible {
+  opacity: 1;
+  transform: translateX(-50%) perspective(1200px) rotateX(5deg);
+}
+
+.app-stage {
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.025),
+    0 42px 100px rgba(0,0,0,.62);
+}
+
+@media(max-width:900px) {
+  .app-stage.reveal,
+  .app-stage.reveal.visible {
+    transform: translateX(-50%);
+  }
+}
