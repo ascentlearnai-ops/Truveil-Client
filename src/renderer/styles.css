@@ -726,3 +726,39 @@ body {
   position: relative;
   z-index: 2;
 }
+
+/* Candidate consent disclosure: clear, compact, and non-alarming. */
+.consent-disclosure {
+  margin: 12px 0 4px;
+  padding: 12px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 8px;
+  background: rgba(255,255,255,.025);
+}
+
+.consent-disclosure strong,
+.consent-disclosure span {
+  display: block;
+}
+
+.consent-disclosure strong {
+  color: #f7f8f8;
+  font-size: 12px;
+  font-weight: 620;
+}
+
+.consent-disclosure span {
+  margin-top: 5px;
+  color: #8a8f98;
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.consent-check {
+  align-items: flex-start;
+  line-height: 1.45;
+}
+
+.consent-check input {
+  margin-top: 2px;
+}

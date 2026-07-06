@@ -30,6 +30,29 @@ test('candidate setup includes swipeable instructional cards', () => {
   assert.doesNotMatch(html, /AI-assistance risk|integrity percent|cheating score/i);
 });
 
+test('candidate consent clearly discloses collected and excluded information', () => {
+  const html = fs.readFileSync('src/renderer/index.html', 'utf8');
+  const renderer = fs.readFileSync('src/renderer/session.js', 'utf8');
+  assert.match(html, /Microphone transcript/);
+  assert.match(html, /Foreground activity/);
+  assert.match(html, /No camera/);
+  assert.match(html, /No screen recording/);
+  assert.match(html, /No file or clipboard access/);
+  assert.match(html, /No automatic hiring decision/);
+  assert.match(renderer, /confirm the session verification notice/i);
+});
+
+test('client legal pages disclose product boundaries', () => {
+  const privacy = fs.readFileSync('privacy.html', 'utf8');
+  const terms = fs.readFileSync('terms.html', 'utf8');
+  const legal = fs.readFileSync('legal.html', 'utf8');
+  assert.match(privacy, /No camera video/i);
+  assert.match(privacy, /No screen recording/i);
+  assert.match(privacy, /No clipboard collection/i);
+  assert.match(terms, /does not automatically decide/i);
+  assert.match(legal, /No hidden candidate-facing risk score/i);
+});
+
 test('candidate uses secure live transcription before fallback audio', () => {
   const source = fs.readFileSync('src/renderer/session.js', 'utf8');
   assert.match(source, /startLiveTranscription\(\)/);

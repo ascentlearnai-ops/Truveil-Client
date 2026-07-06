@@ -1,4 +1,4 @@
-// Run in renderer process — monitors all browser-level cheat signals
+// Run in renderer process - monitors browser-level session policy signals.
 
 window.setupEventMonitors = function(reportFlag) {
   // Window loses focus (candidate switched away)

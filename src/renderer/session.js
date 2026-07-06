@@ -190,7 +190,7 @@ async function startSession() {
   }
 
   if (!sessionConsentInput.checked) {
-    toast('Please consent to monitoring and restricted-site controls to start.', 'error');
+    toast('Please confirm the session verification notice before starting.', 'error');
     sessionConsentInput.focus();
     return;
   }
