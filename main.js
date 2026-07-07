@@ -221,6 +221,19 @@ function createWindow() {
   });
 
   mainWindow.loadFile(path.join(__dirname, 'src/renderer/index.html'));
+
+  // Lock the window to the bundled app. Deny any attempt to open new windows,
+  // and block navigation to anything other than the local file:// renderer
+  // (defense-in-depth against injected content trying to reach an external
+  // origin inside the app frame).
+  mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  const guardNavigation = (event, url) => {
+    if (!String(url || '').startsWith('file://')) event.preventDefault();
+  };
+  mainWindow.webContents.on('will-navigate', guardNavigation);
+  mainWindow.webContents.on('will-redirect', guardNavigation);
+  mainWindow.webContents.on('will-attach-webview', event => event.preventDefault());
+
   mainWindow.once('ready-to-show', () => {
     mainWindow.maximize();
     mainWindow.show();
