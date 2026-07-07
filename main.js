@@ -205,10 +205,10 @@ async function ensureAnonymousAuth() {
 function createWindow() {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize;
   mainWindow = new BrowserWindow({
-    width: Math.min(1100, width - 80),
-    height: Math.min(760, height - 80),
-    minWidth: 860,
-    minHeight: 620,
+    width: Math.min(1100, Math.max(720, width - 80)),
+    height: Math.min(760, Math.max(560, height - 80)),
+    minWidth: Math.min(720, width),
+    minHeight: Math.min(560, height),
     backgroundColor: '#050507',
     titleBarStyle: 'hiddenInset',
     webPreferences: {
