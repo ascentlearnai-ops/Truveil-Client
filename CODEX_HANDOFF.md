@@ -1,15 +1,28 @@
 # Truveil Client Codex Handoff
 
-Last updated: 2026-07-05
+Last updated: 2026-07-06
 
 ## Project Map
 
 - Client repo: `ascentlearnai-ops/Truveil-Client`
-- Client local path used in this Codex thread: `D:\Truveil-Client`
+- Client local path (current laptop): `C:\Truveil\Truveil-Client`
 - Client Electron app: root Electron project in this repo
 - Client website: static client download/check-in website in this repo
-- Admin repo: `ascentlearnai-ops/TrueVeils`
-- Admin local path used in this Codex thread: `D:\TrueVeils`
+- Admin repo: `ascentlearnai-ops/TrueVeils` at `C:\Truveil\TrueVeils`
+
+## 2026-07-06 Launch-Prep Changes (Claude Code)
+
+- Live Deepgram path now reports real utterance `durationMs` in
+  `src/renderer/session.js` (summed from Deepgram `is_final` result durations,
+  reset per utterance/reconnect/session). This feeds the admin app's
+  words-per-minute tempo detection, which previously received 0 on the live path.
+- Deleted dead stub files `src/audio/recorder.js` and `src/websocket/client.js`
+  (never loaded by any HTML/preload; contradicted the real Supabase-relay
+  architecture). Real audio pipeline lives in `session.js` + `pcm-worklet.js`.
+- Candidate app skin: acid-green `#e4f222` replaced with `#4ade80`.
+- Client website: staggered reveals, scroll-aware nav, check-in steps light up
+  in sequence (IntersectionObserver, reduced-motion safe).
+- Tests: 15 passing.
 
 ## Current Product Direction
 

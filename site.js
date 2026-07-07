@@ -7,7 +7,34 @@ const observer = new IntersectionObserver(entries => {
     }
   });
 }, { threshold: .14 });
-document.querySelectorAll('.reveal').forEach(element => observer.observe(element));
+document.querySelectorAll('.reveal').forEach(element => {
+  const siblings = element.parentElement ? [...element.parentElement.children].filter(child => child.classList.contains('reveal')) : [element];
+  const position = Math.max(0, siblings.indexOf(element));
+  element.style.transitionDelay = reducedMotion ? '0s' : `${Math.min(position * 90, 360)}ms`;
+  observer.observe(element);
+});
+
+// Nav gains definition once the page scrolls
+const nav = document.querySelector('.site-nav');
+const onScrollNav = () => nav && nav.classList.toggle('scrolled', scrollY > 12);
+addEventListener('scroll', onScrollNav, { passive: true });
+onScrollNav();
+
+// Check-in steps light up in sequence as they enter view
+const stepsList = document.querySelector('.steps');
+if (stepsList) {
+  const steps = [...stepsList.querySelectorAll('li')];
+  const stepObserver = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add('lit');
+      const litCount = steps.filter(step => step.classList.contains('lit')).length;
+      stepsList.style.setProperty('--steps-progress', `${(litCount / steps.length) * 100}%`);
+      stepObserver.unobserve(entry.target);
+    });
+  }, { threshold: .5 });
+  steps.forEach(step => stepObserver.observe(step));
+}
 
 const inviteParams = new URLSearchParams(location.search);
 const inviteCode = String(inviteParams.get('code') || '').trim().toUpperCase();
@@ -56,6 +83,6 @@ if (!reducedMotion) {
   const stage = document.querySelector('.app-stage');
   addEventListener('scroll', () => {
     if (!stage) return;
-    stage.style.marginBottom = `${-Math.min(scrollY, innerHeight) * .07}px`;
+    stage.style.transform = `translateY(${-Math.min(scrollY, innerHeight) * .07}px)`;
   }, { passive: true });
 }

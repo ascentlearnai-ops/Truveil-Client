@@ -56,6 +56,7 @@ let pcmWorklet = null;
 let pcmSilentGain = null;
 let liveFinalSegments = [];
 let liveFinalConfidences = [];
+let liveUtteranceDurationMs = 0;
 let liveSegmentMaxRms = 0;
 let liveSegmentMaxPeak = 0;
 let liveStreamEpoch = 0;
@@ -594,6 +595,7 @@ function startTranscriptStreaming() {
   lastInterimText = '';
   liveFinalSegments = [];
   liveFinalConfidences = [];
+  liveUtteranceDurationMs = 0;
   liveSegmentMaxRms = 0;
   liveSegmentMaxPeak = 0;
   liveStreamEpoch = 0;
@@ -639,7 +641,7 @@ function publishLiveTranscript(message = {}) {
   window.truveil.sendTranscript({
     text,
     timestamp: message.timestamp || Date.now(),
-    durationMs: 0,
+    durationMs: Number(message.durationMs) || 0,
     sequence: transcriptSequence++,
     source: message.source || 'deepgram-nova-3-live',
     segmentId: message.segmentId || `live-${transcriptSequence}`,
@@ -679,6 +681,7 @@ function flushLiveFinal(finalReason = 'speech_final') {
     text,
     interim: false,
     confidence: average(liveFinalConfidences),
+    durationMs: Math.round(liveUtteranceDurationMs),
     source: 'deepgram-nova-3-direct',
     segmentId: `live-${liveStreamEpoch}-${currentUtteranceId}`,
     revision: liveFinalSegments.length,
@@ -692,6 +695,7 @@ function flushLiveFinal(finalReason = 'speech_final') {
   liveUtteranceId++;
   liveFinalSegments = [];
   liveFinalConfidences = [];
+  liveUtteranceDurationMs = 0;
   liveSegmentMaxRms = 0;
   liveSegmentMaxPeak = 0;
 }
@@ -787,6 +791,7 @@ async function startLiveTranscription() {
       if (message.is_final) {
         if (liveFinalSegments.at(-1) !== text) liveFinalSegments.push(text);
         if (confidence > 0) liveFinalConfidences.push(confidence);
+        liveUtteranceDurationMs += (Number(message.duration) || 0) * 1000;
       }
       if (message.speech_final) {
         flushLiveFinal('speech_final');
@@ -815,6 +820,7 @@ async function startLiveTranscription() {
       liveUtteranceId = 0;
       liveFinalSegments = [];
       liveFinalConfidences = [];
+      liveUtteranceDurationMs = 0;
       liveSegmentMaxRms = 0;
       liveSegmentMaxPeak = 0;
       setTimeout(() => startLiveTranscription().catch(() => {}), 900 * liveReconnectAttempts);
