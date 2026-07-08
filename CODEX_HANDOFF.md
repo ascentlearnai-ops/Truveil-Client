@@ -1,5 +1,7 @@
 # Truveil Client Codex Handoff
 
+> **Read `C:\Truveil\TrueVeils\MASTERPLAN.md` first — it holds the end goal (YC + 100 companies), the roadmap, the marketing plan, and the model delegation playbook for both repos.**
+
 Last updated: 2026-07-06
 
 ## Project Map
