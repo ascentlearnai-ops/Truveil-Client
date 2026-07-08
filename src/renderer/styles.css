@@ -840,3 +840,18 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* ── Cross-cutting polish (appended) ─────────────────────────── */
+*{scrollbar-width:thin;scrollbar-color:#2a2c31 transparent}
+*::-webkit-scrollbar{width:10px;height:10px}
+*::-webkit-scrollbar-track{background:transparent}
+*::-webkit-scrollbar-thumb{background:#26282d;border:2px solid #0f1011;border-radius:8px}
+*::-webkit-scrollbar-thumb:hover{background:#34373d}
+
+:focus-visible{outline:2px solid #6683ff;outline-offset:2px;border-radius:4px}
+input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none}
+
+.btn,.instruction-nav,.consent-check,.status-pill{transition:border-color .15s ease,background .15s ease,color .15s ease,transform .08s ease}
+.btn:active,.instruction-nav:active{transform:translateY(1px)}
+
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
