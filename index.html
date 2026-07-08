@@ -9,12 +9,10 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="grid-overlay" aria-hidden="true"></div>
-
   <header class="site-nav">
     <a class="brand" href="#top"><span class="brand-glyph">T</span><span>Truveil Secure</span></a>
     <nav aria-label="Primary navigation">
-      <a href="#steps">How check-in works</a>
+      <a href="#steps">Check-in</a>
       <a href="#privacy">Privacy</a>
       <a href="#download">Download</a>
     </nav>
@@ -22,121 +20,86 @@
   </header>
 
   <main>
-    <!-- ─── HERO ─────────────────────────────────────────────── -->
     <section class="hero" id="top">
-      <div class="hero-aura" aria-hidden="true"></div>
-      <div class="hero-copy">
-        <span class="eyebrow reveal">Candidate interview check-in</span>
-        <h1 class="reveal">One code.<br>A clear check-in.</h1>
-        <p class="reveal">Your recruiter uses Truveil Secure to verify the session with your consent. The app stays simple and focused on your connection — nothing starts until you say yes.</p>
-        <div class="hero-actions reveal">
+      <div class="hero-copy reveal">
+        <span class="eyebrow">Candidate interview check-in</span>
+        <h1>One code. A clear check-in. Then your interview.</h1>
+        <p>Your recruiter uses Truveil Secure to verify the session with your consent. The app stays focused on connection health and keeps the candidate experience simple.</p>
+        <div class="hero-actions">
           <a class="primary-action" href="/downloads/TruveilSecure-Setup-1.0.0.exe" download>Download for Windows</a>
-          <a class="text-action" href="#steps">See how check-in feels <span aria-hidden="true">&darr;</span></a>
-        </div>
-        <div class="hero-facts reveal">
-          <span>Consent first</span>
-          <span>No camera</span>
-          <span>No screen recording</span>
+          <a class="text-action" href="#privacy">Review privacy <span>+</span></a>
         </div>
       </div>
 
       <div class="app-stage reveal" aria-label="Preview of Truveil Secure">
-        <div class="app-bar"><div><span class="brand-glyph mini">T</span><strong>Truveil Secure</strong></div><span class="app-ready">Ready</span></div>
+        <div class="app-bar"><div><span class="brand-glyph mini">T</span><strong>Truveil Secure</strong></div><span>Ready</span></div>
         <div class="app-body">
+          <div class="scan-sweep" aria-hidden="true"></div>
+          <div class="app-orbit"><span></span><span></span><strong>TRV</strong></div>
           <span class="app-kicker">Interview check-in</span>
           <h2>Enter your session code</h2>
           <div class="code-preview">TRV-482910</div>
           <div class="app-button">Start secure session</div>
-          <div class="signal-line" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="signal-line"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
         </div>
       </div>
-      <a class="scroll-cue" href="#steps" aria-label="Scroll to check-in walkthrough"><span>Scroll</span><i></i></a>
+      <div class="hero-fade"></div>
     </section>
 
-    <!-- ─── CHECK-IN STORY (pinned scroll scene) ─────────────── -->
-    <section class="story" id="steps">
-      <div class="story-track" data-story-track>
-        <div class="story-stage" data-story data-phase="0">
-          <div class="story-head">
-            <span class="eyebrow">How check-in feels</span>
-            <h2>See exactly what happens before you talk.</h2>
-            <p>Scroll through the check-in. Your code arrives, you review what the session uses, you allow your microphone — then you are ready. That is the whole flow.</p>
-          </div>
-
-          <div class="secure-demo" aria-label="Check-in walkthrough">
-            <div class="secure-window">
-              <div class="secure-bar"><span class="brand-glyph mini">T</span><strong>Truveil Secure</strong><span class="secure-state" data-state>Waiting for code</span></div>
-              <div class="secure-body">
-                <section class="secure-scene" data-scene="0">
-                  <span class="scene-kicker">Step 1 &middot; Your invite</span>
-                  <label class="scene-label">Session code</label>
-                  <div class="scene-code"><span id="storyCode"></span><b class="caret" aria-hidden="true"></b></div>
-                  <p class="scene-note">The app explains the session before anything begins. You paste the short code your recruiter sent.</p>
-                </section>
-
-                <section class="secure-scene" data-scene="1">
-                  <span class="scene-kicker">Step 2 &middot; Review &amp; consent</span>
-                  <ul class="consent-list">
-                    <li data-consent><i></i>Microphone transcript for the interview</li>
-                    <li data-consent><i></i>Foreground app &amp; window names during the session</li>
-                    <li data-consent><i></i>No camera, screen recording, or files</li>
-                  </ul>
-                  <p class="scene-note">Nothing is collected until you agree. You stay in control of when it starts.</p>
-                </section>
-
-                <section class="secure-scene" data-scene="2">
-                  <span class="scene-kicker">Step 3 &middot; You are ready</span>
-                  <div class="mic-live"><span>Microphone</span><div class="signal-line big" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
-                  <div class="ready-chip" data-ready>Connected &middot; Take your interview normally</div>
-                </section>
-              </div>
+    <section class="steps-band" id="steps">
+      <div class="section-copy reveal">
+        <span class="eyebrow">Before the call</span>
+        <h2>Check in without guesswork.</h2>
+        <p>The app explains what the session uses before it begins. Nothing starts until you consent and enter the code from your recruiter.</p>
+      </div>
+      <ol class="steps">
+        <li class="reveal"><span>01</span><h3>Install</h3><p>Download the Windows app directly from this page.</p></li>
+        <li class="reveal"><span>02</span><h3>Paste code</h3><p>Enter the short TRV code sent by your recruiter.</p></li>
+        <li class="reveal"><span>03</span><h3>Review and consent</h3><p>Confirm microphone and session-monitoring details.</p></li>
+        <li class="reveal"><span>04</span><h3>Take the interview</h3><p>Keep Truveil Secure open while you continue your call normally.</p></li>
+      </ol>
+      <div class="secure-demo reveal" aria-label="Designed Truveil Secure candidate app preview">
+        <section class="secure-window">
+          <div class="secure-window-bar"><span class="brand-glyph mini">T</span><strong>Truveil Secure</strong><em>Ready</em></div>
+          <div class="secure-window-body">
+            <div class="instruction-stack">
+              <span>01</span>
+              <strong>Paste your invite code</strong>
+              <p>The app explains session verification before anything begins.</p>
+            </div>
+            <div class="code-module">
+              <label>Session code</label>
+              <strong>TRV-482910</strong>
+              <button type="button">Start secure session</button>
+            </div>
+            <div class="voice-module">
+              <span>Mic health</span>
+              <div class="signal-line"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
             </div>
           </div>
-
-          <p class="story-caption">Truveil Secure never shows a score or a judgement. It keeps the session honest and hands the review to a person.</p>
-          <div class="story-progress" aria-hidden="true"><i></i><i></i><i></i></div>
-        </div>
+        </section>
       </div>
     </section>
 
-    <!-- ─── STEPS RECAP ──────────────────────────────────────── -->
-    <section class="flow-band">
-      <div class="flow-heading reveal">
-        <span class="eyebrow">Four quiet steps</span>
-        <h2>Check in without guesswork.</h2>
-      </div>
-      <ol class="steps flow-list">
-        <li class="reveal"><span>01</span><div><h3>Install</h3><p>Download the Windows app directly from this page.</p></div></li>
-        <li class="reveal"><span>02</span><div><h3>Paste code</h3><p>Enter the short TRV code sent by your recruiter.</p></div></li>
-        <li class="reveal"><span>03</span><div><h3>Review &amp; consent</h3><p>Confirm microphone and session-monitoring details before anything starts.</p></div></li>
-        <li class="reveal"><span>04</span><div><h3>Take the interview</h3><p>Keep Truveil Secure open while you continue your call normally.</p></div></li>
-      </ol>
-    </section>
-
-    <!-- ─── PRIVACY ──────────────────────────────────────────── -->
     <section class="privacy-band" id="privacy">
       <div class="privacy-copy reveal">
         <span class="eyebrow">Plain-language privacy</span>
         <h2>Verification should never be mysterious.</h2>
-        <p>Truveil Secure is built to be understandable. Here is exactly what it does and does not do during your interview.</p>
       </div>
       <div class="privacy-list">
         <article class="reveal"><span>Microphone</span><h3>Used for live transcript</h3><p>Fallback audio is temporary and deleted after transcription. Raw audio is not included in the report.</p></article>
         <article class="reveal"><span>No camera</span><h3>No video proctoring</h3><p>Truveil Secure does not use your camera or record your screen.</p></article>
-        <article class="reveal"><span>Session focus</span><h3>Foreground changes are recorded</h3><p>The recruiter may receive the foreground app name, window title, browser URL or host, and detection source when Windows exposes them.</p></article>
+        <article class="reveal"><span>Session focus</span><h3>Foreground changes are recorded</h3><p>The recruiter may receive the foreground app name, window title, browser URL or host, and detection source when Windows exposes them. Capture-excluded windows may also be reported.</p></article>
         <article class="reveal"><span>Restricted sites</span><h3>Known restricted destinations may close</h3><p>Truveil uses best-effort desktop controls. It does not claim perfect browser-level blocking.</p></article>
         <article class="reveal"><span>Your files</span><h3>Not part of the session</h3><p>Truveil Secure does not read your personal documents, clipboard, messages, or browser history. It does not make the hiring decision.</p></article>
       </div>
     </section>
 
-    <!-- ─── DOWNLOAD ─────────────────────────────────────────── -->
-    <section class="closing-band reveal" id="download">
-      <div class="closing-aura" aria-hidden="true"></div>
+    <section class="download-band reveal" id="download">
       <span class="eyebrow">Ready for your interview</span>
       <h2>Download Truveil Secure.</h2>
-      <p class="closing-lead">Windows paid beta. Your recruiter provides the session code.</p>
+      <p>Windows paid beta. Your recruiter provides the session code.</p>
       <a class="primary-action" href="/downloads/TruveilSecure-Setup-1.0.0.exe" download>Download Windows installer</a>
-      <p class="closing-note">Consent first &middot; No camera &middot; No screen recording</p>
     </section>
   </main>
 
@@ -146,7 +109,7 @@
     <a href="/downloads/TruveilSecure-Setup-1.0.0.exe.sha256" download>SHA-256 checksum</a>
     <a href="/privacy.html">Privacy</a>
     <a href="/terms.html">Terms</a>
-    <a href="/legal.html">Trust &amp; Legal</a>
+    <a href="/legal.html">Trust & Legal</a>
     <a href="/support.html">Support</a>
     <span>2026 Truveil</span>
   </footer>
