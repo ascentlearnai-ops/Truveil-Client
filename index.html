@@ -9,6 +9,14 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <aside class="beta-notice" role="status" aria-label="Truveil Secure is in public beta">
+    <span class="beta-notice-tag">Public beta</span>
+    <span class="beta-notice-text"><strong>Windows paid beta.</strong> Core workflows are stable &mdash; active builds still have small issues. Tell your recruiter if anything looks off.</span>
+    <a class="beta-notice-link" href="/support.html">Report an issue</a>
+  </aside>
+
   <header class="site-nav">
     <a class="brand" href="#top"><span class="brand-glyph">T</span><span>Truveil Secure</span></a>
     <nav aria-label="Primary navigation">
@@ -19,7 +27,7 @@
     <a class="nav-cta" href="/downloads/TruveilSecure-Setup-1.0.0.exe" download>Get the app</a>
   </header>
 
-  <main>
+  <main id="main">
     <section class="hero" id="top">
       <div class="hero-copy reveal">
         <span class="eyebrow">Candidate interview check-in</span>
@@ -93,6 +101,20 @@
         <article class="reveal"><span>Restricted sites</span><h3>Known restricted destinations may close</h3><p>Truveil uses best-effort desktop controls. It does not claim perfect browser-level blocking.</p></article>
         <article class="reveal"><span>Your files</span><h3>Not part of the session</h3><p>Truveil Secure does not read your personal documents, clipboard, messages, or browser history. It does not make the hiring decision.</p></article>
       </div>
+    </section>
+
+    <section class="expect-band" aria-label="What to expect from the beta">
+      <div class="section-copy reveal">
+        <span class="eyebrow">First run in beta</span>
+        <h2>Three short steps from here to your first verified check-in.</h2>
+        <p>The app explains each step before it does anything. Nothing starts until you consent.</p>
+      </div>
+      <ol class="expect-list">
+        <li><strong>Install the Windows app.</strong> The download is about a minute on most networks.</li>
+        <li><strong>Paste your TRV code.</strong> Your recruiter sends the short code inside their invite.</li>
+        <li><strong>Review the consent notice and join.</strong> Truveil explains microphone use and session monitoring before it starts.</li>
+      </ol>
+      <p class="expect-help">Stuck or something looks off? <a href="/support.html">Send a quick report</a> &mdash; we read every one.</p>
     </section>
 
     <section class="download-band reveal" id="download">
