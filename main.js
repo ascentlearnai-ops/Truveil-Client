@@ -272,11 +272,13 @@ async function fetchSessionFromApi(sessionCode) {
 async function joinSessionThroughFunction(sessionCode, candidateName) {
   const { functionsBaseUrl, supabaseAnonKey } = getConfig();
   if (!functionsBaseUrl || !supabaseAnonKey) return null;
+  const authSession = await ensureAnonymousAuth();
+  const bearerToken = authSession?.access_token || supabaseAnonKey;
   const response = await fetch(`${functionsBaseUrl}/candidate-join`, {
     method: 'POST',
     headers: {
       apikey: supabaseAnonKey,
-      authorization: `Bearer ${supabaseAnonKey}`,
+      authorization: `Bearer ${bearerToken}`,
       'content-type': 'application/json'
     },
     body: JSON.stringify({ joinCode: sessionCode, candidateName })
@@ -324,7 +326,7 @@ async function joinRealtimeSession(sessionId) {
 
   realtimeChannel = client
     .channel(sessionChannelName(sessionId), {
-      config: { private: false, broadcast: { self: false }, presence: { key: 'candidate' } }
+      config: { private: Boolean(activeSession?.internalId), broadcast: { self: false }, presence: { key: 'candidate' } }
     })
     .on('broadcast', { event: 'session_started' }, async () => {
       await activateMonitoring();

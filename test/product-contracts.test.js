@@ -99,11 +99,17 @@ test('ordinary destinations are observed while known restricted targets are clos
   assert.match(source, /policyDecision:\s*decision\.unlisted\s*\?\s*'unlisted'/);
 });
 
-test('candidate joins with a TRV code without Supabase anonymous auth', () => {
+test('candidate secure join authenticates before session membership is created', () => {
   const source = fs.readFileSync('main.js', 'utf8');
   const joinBlock = source.match(/async function joinSessionThroughFunction[\s\S]*?async function validateSession/);
   assert.ok(joinBlock, 'joinSessionThroughFunction block should exist');
   assert.match(joinBlock[0], /candidate-join/);
-  assert.doesNotMatch(joinBlock[0], /signInAnonymously|ensureAnonymousAuth/);
-  assert.match(joinBlock[0], /Bearer \$\{supabaseAnonKey\}/);
+  assert.match(joinBlock[0], /ensureAnonymousAuth/);
+  assert.match(joinBlock[0], /Bearer \$\{bearerToken\}/);
+});
+
+test('candidate realtime uses private channels after secure join', () => {
+  const source = fs.readFileSync('main.js', 'utf8');
+  assert.match(source, /private:\s*Boolean\(activeSession\?\.internalId\)/);
+  assert.match(source, /joinRealtimeSession\(activeSession\.internalId \|\| normalizedCode\)/);
 });
