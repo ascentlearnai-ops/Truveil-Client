@@ -41,6 +41,12 @@ async function runWithRetry(operation, { attempts = 3, baseDelayMs = 650 } = {})
   throw lastError;
 }
 
+function isStorageConflict(error) {
+  const status = Number(error?.statusCode || error?.status || 0);
+  const message = String(error?.message || error || '').toLowerCase();
+  return status === 409 || message.includes('already exists') || message.includes('duplicate');
+}
+
 const DEFAULT_POLICY = {
   allowed_apps: ['TruveilSecure', 'Zoom', 'Microsoft Teams', 'Google Chrome', 'Microsoft Edge'],
   allowed_sites: ['meet.google.com', 'zoom.us', 'teams.microsoft.com'],
@@ -273,7 +279,8 @@ async function joinSessionThroughFunction(sessionCode, candidateName) {
   const { functionsBaseUrl, supabaseAnonKey } = getConfig();
   if (!functionsBaseUrl || !supabaseAnonKey) return null;
   const authSession = await ensureAnonymousAuth();
-  const bearerToken = authSession?.access_token || supabaseAnonKey;
+  const bearerToken = authSession?.access_token;
+  if (!bearerToken) throw new Error('Candidate sign-in failed before session join.');
   const response = await fetch(`${functionsBaseUrl}/candidate-join`, {
     method: 'POST',
     headers: {
@@ -545,7 +552,7 @@ async function uploadCandidateAudioChunk(data = {}) {
           upsert: false
         });
 
-      if (upload.error) throw new Error(upload.error.message);
+      if (upload.error && !isStorageConflict(upload.error)) throw new Error(upload.error.message);
       return upload;
     });
 
@@ -563,7 +570,11 @@ async function uploadCandidateAudioChunk(data = {}) {
     };
 
     const insert = await client.from('audio_chunks').upsert(row, { onConflict: 'id' });
-    if (insert.error) console.warn('[Truveil] audio metadata insert failed:', insert.error.message);
+    if (insert.error) {
+      console.warn('[Truveil] audio metadata insert failed:', insert.error.message);
+      await client.storage.from('session-audio').remove([storagePath]).catch(() => {});
+      throw new Error(`Audio metadata insert failed: ${insert.error.message}`);
+    }
 
     const payload = {
       type: 'candidate_audio_chunk',

@@ -105,11 +105,36 @@ test('candidate secure join authenticates before session membership is created',
   assert.ok(joinBlock, 'joinSessionThroughFunction block should exist');
   assert.match(joinBlock[0], /candidate-join/);
   assert.match(joinBlock[0], /ensureAnonymousAuth/);
+  assert.match(joinBlock[0], /Candidate sign-in failed before session join/);
   assert.match(joinBlock[0], /Bearer \$\{bearerToken\}/);
+  assert.doesNotMatch(joinBlock[0], /authSession\?\.access_token \|\| supabaseAnonKey/);
 });
 
 test('candidate realtime uses private channels after secure join', () => {
   const source = fs.readFileSync('main.js', 'utf8');
   assert.match(source, /private:\s*Boolean\(activeSession\?\.internalId\)/);
   assert.match(source, /joinRealtimeSession\(activeSession\.internalId \|\| normalizedCode\)/);
+});
+
+test('storage fallback treats duplicate uploads as idempotent but fails on missing metadata', () => {
+  const source = fs.readFileSync('main.js', 'utf8');
+  assert.match(source, /function isStorageConflict/);
+  assert.match(source, /status === 409/);
+  assert.match(source, /!isStorageConflict\(upload\.error\)/);
+  assert.match(source, /Audio metadata insert failed/);
+  assert.match(source, /\.from\('session-audio'\)\.remove\(\[storagePath\]\)/);
+});
+
+test('candidate policy summary renders recruiter blocked-site policy', () => {
+  const renderer = fs.readFileSync('src/renderer/session.js', 'utf8');
+  assert.match(renderer, /Blocked website/);
+  assert.match(renderer, /blocked\.slice\(0, 8\)\.join\(', '\)/);
+  assert.match(renderer, /summary\.hidden = false/);
+  assert.doesNotMatch(renderer, /summary\.hidden = true/);
+});
+
+test('live transcription tolerates repeated transient reconnects before fallback', () => {
+  const renderer = fs.readFileSync('src/renderer/session.js', 'utf8');
+  assert.match(renderer, /liveReconnectAttempts = 0/);
+  assert.match(renderer, /liveReconnectAttempts <= 5/);
 });

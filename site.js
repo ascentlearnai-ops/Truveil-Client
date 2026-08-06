@@ -1,40 +1,68 @@
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const observer = new IntersectionObserver(entries => {
+
+const nav = document.querySelector('[data-site-nav]');
+const updateNav = () => nav?.classList.toggle('scrolled', scrollY > 80);
+addEventListener('scroll', updateNav, { passive: true });
+updateNav();
+
+const revealObserver = new IntersectionObserver(entries => {
   entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      entry.target.classList.add('visible');
-      observer.unobserve(entry.target);
-    }
+    if (!entry.isIntersecting) return;
+    entry.target.classList.add('visible');
+    revealObserver.unobserve(entry.target);
   });
-}, { threshold: .14 });
-document.querySelectorAll('.reveal').forEach(element => {
-  const siblings = element.parentElement ? [...element.parentElement.children].filter(child => child.classList.contains('reveal')) : [element];
-  const position = Math.max(0, siblings.indexOf(element));
-  element.style.transitionDelay = reducedMotion ? '0s' : `${Math.min(position * 90, 360)}ms`;
-  observer.observe(element);
+}, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
+
+document.querySelectorAll('.reveal').forEach((element, index) => {
+  element.style.transitionDelay = reducedMotion ? '0ms' : `${Math.min(index % 3, 2) * 70}ms`;
+  revealObserver.observe(element);
 });
 
-// Nav gains definition once the page scrolls
-const nav = document.querySelector('.site-nav');
-const onScrollNav = () => nav && nav.classList.toggle('scrolled', scrollY > 12);
-addEventListener('scroll', onScrollNav, { passive: true });
-onScrollNav();
-
-// Check-in steps light up in sequence as they enter view
-const stepsList = document.querySelector('.steps');
+const stepsList = document.querySelector('[data-steps]');
 if (stepsList) {
   const steps = [...stepsList.querySelectorAll('li')];
   const stepObserver = new IntersectionObserver(entries => {
     entries.forEach(entry => {
       if (!entry.isIntersecting) return;
       entry.target.classList.add('lit');
-      const litCount = steps.filter(step => step.classList.contains('lit')).length;
-      stepsList.style.setProperty('--steps-progress', `${(litCount / steps.length) * 100}%`);
+      const completed = steps.filter(step => step.classList.contains('lit')).length;
+      stepsList.style.setProperty('--steps-progress', `${(completed / steps.length) * 100}%`);
       stepObserver.unobserve(entry.target);
     });
-  }, { threshold: .5 });
+  }, { threshold: 0.55 });
   steps.forEach(step => stepObserver.observe(step));
 }
+
+const demoButtons = [...document.querySelectorAll('[data-demo-step]')];
+const demoPanels = [...document.querySelectorAll('[data-demo-panel]')];
+function selectDemo(index) {
+  demoButtons.forEach((button, buttonIndex) => {
+    button.classList.toggle('active', buttonIndex === index);
+    button.setAttribute('aria-pressed', String(buttonIndex === index));
+  });
+  demoPanels.forEach((panel, panelIndex) => panel.classList.toggle('active', panelIndex === index));
+}
+demoButtons.forEach((button, index) => button.addEventListener('click', () => selectDemo(index)));
+
+const elapsed = document.querySelector('[data-elapsed]');
+if (elapsed && !reducedMotion) {
+  let seconds = 8 * 60 + 14;
+  setInterval(() => {
+    seconds += 1;
+    const minutes = String(Math.floor(seconds / 60)).padStart(2, '0');
+    const remainder = String(seconds % 60).padStart(2, '0');
+    elapsed.textContent = `00:${minutes}:${remainder}`;
+  }, 1000);
+}
+
+document.querySelectorAll('.faq-list details').forEach(detail => {
+  detail.addEventListener('toggle', () => {
+    if (!detail.open) return;
+    document.querySelectorAll('.faq-list details').forEach(other => {
+      if (other !== detail) other.open = false;
+    });
+  });
+});
 
 const inviteParams = new URLSearchParams(location.search);
 const inviteCode = String(inviteParams.get('code') || '').trim().toUpperCase();
@@ -47,14 +75,16 @@ function validInviteCode(code) {
 function applyInviteCode(code) {
   if (!validInviteCode(code)) return;
   const protocolUrl = `truveil://join?code=${encodeURIComponent(code)}`;
-  document.querySelectorAll('.primary-action').forEach((link, index) => {
+  const primaryActions = [...document.querySelectorAll('.primary-action')];
+  primaryActions.forEach((link, index) => {
     link.href = protocolUrl;
     link.removeAttribute('download');
     link.textContent = index === 0 ? 'Open Truveil Secure' : 'Open with code';
   });
 
-  const codePreview = document.querySelector('.code-preview');
-  if (codePreview) codePreview.textContent = code;
+  document.querySelectorAll('.code-preview').forEach(preview => {
+    preview.textContent = code;
+  });
 
   const heroActions = document.querySelector('.hero-actions');
   if (heroActions && !document.querySelector('.invite-panel')) {
@@ -80,9 +110,15 @@ function applyInviteCode(code) {
 applyInviteCode(inviteCode);
 
 if (!reducedMotion) {
-  const stage = document.querySelector('.app-stage');
+  const heroWindow = document.querySelector('.hero-window');
+  let ticking = false;
   addEventListener('scroll', () => {
-    if (!stage) return;
-    stage.style.transform = `translateY(${-Math.min(scrollY, innerHeight) * .07}px)`;
+    if (ticking || !heroWindow) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      const progress = Math.min(scrollY / Math.max(innerHeight, 1), 1);
+      heroWindow.style.transform = `perspective(1400px) rotateX(2deg) translateY(${progress * -38}px)`;
+      ticking = false;
+    });
   }, { passive: true });
 }

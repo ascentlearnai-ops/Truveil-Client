@@ -815,7 +815,7 @@ async function startLiveTranscription() {
     liveStreamReady = false;
     if (sessionEnding || audioFallbackActive) return;
     liveReconnectAttempts++;
-    if (liveReconnectAttempts <= 2) {
+    if (liveReconnectAttempts <= 5) {
       liveStreamEpoch++;
       liveUtteranceId = 0;
       liveFinalSegments = [];
@@ -882,11 +882,12 @@ function renderPolicy(policy = {}) {
   if (!summary || !text) return;
 
   if (!blocked.length) {
-    text.textContent = '';
+    text.textContent = 'No extra blocked websites were added for this interview.';
   } else {
-    text.textContent = '';
+    const label = blocked.length === 1 ? 'Blocked website' : 'Blocked websites';
+    text.textContent = `${label}: ${blocked.slice(0, 8).join(', ')}${blocked.length > 8 ? ', and more' : ''}.`;
   }
-  summary.hidden = true;
+  summary.hidden = false;
 }
 
 async function finishSession(message) {
