@@ -9,3 +9,5 @@ out/
 .env
 !downloads/
 !downloads/TruveilSecure-Setup-1.0.0.exe
+.vercel
+.env*

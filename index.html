@@ -1,176 +1,961 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Download Truveil Secure, review the consent notice, and join your verified interview with the code from your recruiter.">
-  <meta name="theme-color" content="#04080a">
-  <title>Truveil Secure - A clear interview check-in</title>
-  <link rel="icon" type="image/png" href="img/brand/truveil-lock-transparent.png">
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <a class="skip-link" href="#main">Skip to content</a>
-
-  <header class="site-nav" data-site-nav>
-    <a class="brand" href="#top"><span class="brand-glyph" aria-hidden="true">T</span><span>Truveil Secure</span></a>
-    <nav aria-label="Primary navigation">
-      <a href="#check-in">Check-in</a>
-      <a href="#privacy">Privacy</a>
-      <a href="#questions">Questions</a>
-    </nav>
-    <a class="nav-cta" href="/downloads/TruveilSecure-Setup-1.0.0.exe" download>Download for Windows</a>
-  </header>
-
-  <main id="main">
-    <section class="hero" id="top">
-      <div class="ambient-grid" aria-hidden="true"></div>
-      <img class="hero-room-plate" src="assets/generated/candidate-room.jpeg" alt="A quiet private interview desk with a centered laptop, generated for Truveil by Magic Hour">
-      <div class="hero-copy reveal">
-        <span class="eyebrow">Candidate interview check-in</span>
-        <h1>One code. A clear check-in. Then your interview.</h1>
-        <p>Truveil Secure verifies the agreed interview session with your consent. It shows connection health, explains the policy, and stays out of the conversation.</p>
-        <div class="hero-actions">
-          <a class="button button-primary primary-action" href="/downloads/TruveilSecure-Setup-1.0.0.exe" download>Download for Windows</a>
-          <a class="button button-ghost" href="#privacy">Review privacy</a>
-        </div>
-        <aside class="beta-notice" role="status" aria-label="Truveil Secure is in public beta">
-          <span>Public beta</span><p><strong>Windows paid beta.</strong> Core check-in workflows are stable; small issues can still appear.</p><a href="/support.html">Report issue</a>
-        </aside>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Join your Truveil interview with a clear understanding of microphone transcription, session monitoring, and your privacy."
+    />
+    <meta name="theme-color" content="#edf7fd" />
+    <meta
+      property="og:title"
+      content="Truveil Secure | Your consent-based interview"
+    />
+    <meta
+      property="og:description"
+      content="Join your Truveil interview with a clear understanding of microphone transcription, session monitoring, and your privacy."
+    />
+    <meta
+      property="og:image"
+      content="https://truveil-secure.vercel.app/assets/brand/candidate.webp"
+    />
+    <title>Truveil Secure | Your consent-based interview</title>
+    <link rel="icon" type="image/png" href="assets/brand/favicon.png" />
+    <link
+      rel="preload"
+      href="assets/fonts/manrope-regular.ttf"
+      as="font"
+      type="font/ttf"
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="motion.css" />
+    <script src="site.js" defer></script>
+    <script src="motion.js" defer></script>
+    <link rel="stylesheet" href="interview-demo.css" />
+    <script src="interview-demo.js" defer></script>
+  </head>
+  <body data-audience="candidate" class="candidate cinematic-home">
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-nav wrap">
+      <a class="brand" href="index.html" aria-label="Truveil Secure home"
+        ><img src="assets/brand/mark.png" width="36" height="34" alt="" /><span
+          >truveil</span
+        ><small>FOR CANDIDATES</small></a
+      >
+      <nav class="nav-center" id="main-navigation" aria-label="Main navigation">
+        <a href="guide.html">How to prepare</a
+        ><a href="privacy.html">Your privacy</a
+        ><a href="https://truveil-recruiter.vercel.app"
+          >For hiring teams
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 12h14m-6-6 6 6-6 6" /></svg
+        ></a>
+        <a class="mobile-login" href="login.html">Join an interview</a>
+      </nav>
+      <div class="nav-account">
+        <a href="login.html">Join an interview</a
+        ><a class="btn small" href="waitlist.html"
+          >Join the waitlist
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 12h14m-6-6 6 6-6 6" /></svg
+        ></a>
       </div>
-
-      <div class="secure-hero-stage reveal" aria-label="Live preview of Truveil Secure">
-        <div class="secure-window hero-window">
-          <div class="secure-window-bar"><div><span class="brand-glyph mini" aria-hidden="true">T</span><strong>Truveil Secure</strong></div><span><i class="dot dot-clear"></i>Ready</span></div>
-          <div class="secure-window-body">
-            <div class="session-vault" aria-hidden="true"><span></span><span></span><strong>TRV</strong></div>
-            <span class="eyebrow">Interview check-in</span>
-            <h2>Enter your session code</h2>
-            <div class="code-preview">TRV-482910</div>
-            <div class="secure-button">Start secure session</div>
-            <div class="health-row"><span><i class="dot dot-clear"></i>Connection ready</span><span><i class="dot dot-clear"></i>Microphone ready</span></div>
+      <button
+        class="menu-toggle"
+        aria-label="Open navigation"
+        aria-expanded="false"
+        aria-controls="main-navigation"
+      >
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 7h16M4 12h16M4 17h16" />
+        </svg>
+      </button>
+    </header>
+    <main id="main">
+      <section class="cinema-hero">
+        <div class="wrap cinema-copy">
+          <div class="overline">THE CANDIDATE COMPANION TO TRUVEIL</div>
+          <h1>Truveil Secure.<em>Know what you share.</em></h1>
+          <p>
+            Your interviewer uses Truveil to review possible AI assistance. Join
+            with a clear view of the session rules, what is monitored, and what
+            stays private.
+          </p>
+          <div class="hero-actions">
+            <a class="btn" href="demo.html"
+              >Try the interactive demo
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 12h14m-6-6 6 6-6 6" /></svg></a
+            ><a class="text-link" href="login.html"
+              >I have an interview code
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 12h14m-6-6 6 6-6 6" /></svg
+            ></a>
+          </div>
+          <div class="hero-fine">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="16" rx="2" />
+              <path d="M3 9h18m-13-3h.01M11 6h.01" />
+            </svg>
+            Browser demo: no code needed &#160;·&#160; Full app: Windows beta
+          </div>
+          <div class="invite-banner" data-invite-banner="" hidden>
+            <span>Your invitation</span><strong class="code-preview"></strong
+            ><a data-invite-open=""
+              >Open Truveil Secure
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 12h14m-6-6 6 6-6 6" /></svg
+            ></a>
           </div>
         </div>
+        <div class="cinema-set">
+          <div class="cinema-media">
+            <img
+              src="assets/brand/candidate-hq-poster.webp"
+              width="1932"
+              height="1080"
+              fetchpriority="high"
+              alt="Tavi, Truveil's baby-blue padlock mascot, holding your interview invitation"
+            />
+            <video
+              data-src="assets/brand/candidate-hq.mp4"
+              muted
+              loop
+              playsinline
+              preload="none"
+              aria-hidden="true"
+            ></video>
+            <video
+              class="cinema-look"
+              data-fps="60"
+              data-src="assets/brand/candidate-look.mp4"
+              muted
+              playsinline
+              preload="none"
+              aria-hidden="true"
+            ></video>
+          </div>
+          <div class="hero-proof">
+            <div class="proof-toolbar">
+              <img
+                src="assets/brand/mark.png"
+                width="18"
+                height="22"
+                alt=""
+              /><b>truveil / Your check-in</b><span>Illustrated preview</span>
+            </div>
+            <div class="proof-body">
+              <h2>A clear start to your interview.</h2>
+              <div class="proof-line">
+                <time>01</time>
+                <p>Enter the invitation code from your interviewer.</p>
+              </div>
+              <div class="proof-line">
+                <time>02</time>
+                <p>Review the tools policy and collection notice.</p>
+              </div>
+              <div class="proof-line">
+                <time>03</time>
+                <p>Choose whether to consent. Check your microphone.</p>
+              </div>
+              <span class="tag">No candidate account needed</span>
+            </div>
+            <span class="proof-seal"
+              ><svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m4 12 5 5L20 6" /></svg
+              >Your consent comes first</span
+            >
+          </div>
+          <div class="cinema-controls">
+            <span data-film-credit>Meet Tavi. Here for your first hello.</span
+            ><button
+              class="motion-toggle is-paused"
+              aria-label="Play background video"
+              title="Play background video"
+            >
+              <svg
+                class="icon pause-icon"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path d="M9 5v14M15 5v14" /></svg
+              ><svg
+                class="icon play-icon"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path d="m8 5 11 7-11 7Z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </section>
+      <div class="trust-strip wrap">
+        <span class="note">A little reassurance, before you begin.</span
+        ><span
+          ><svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="5" y="10" width="14" height="11" rx="2" />
+            <path d="M8 10V6a4 4 0 0 1 8 0v4m-4 5v2" />
+          </svg>
+          Consent before monitoring</span
+        ><span
+          ><svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+          No camera. No screen recording.</span
+        ><span
+          ><svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"
+            />
+          </svg>
+          Your own thinking matters</span
+        >
       </div>
-      <span class="scroll-cue" aria-hidden="true">Before the call</span>
-    </section>
-
-    <section class="trust-strip" aria-label="Candidate privacy summary">
-      <div><i class="dot dot-clear"></i><span>No camera</span></div>
-      <div><i class="dot dot-clear"></i><span>No screen recording</span></div>
-      <div><i class="dot dot-clear"></i><span>No biometric scoring</span></div>
-      <div><i class="dot dot-clear"></i><span>Consent before monitoring</span></div>
-    </section>
-
-    <section class="checkin-section section" id="check-in">
-      <div class="section-heading reveal">
-        <span class="eyebrow">Before the call</span>
-        <h2>Four steps, all visible.</h2>
-        <p>Nothing begins in the background. The app explains the session first and waits for you.</p>
-      </div>
-      <ol class="steps" data-steps>
-        <li class="reveal"><span>01</span><h3>Install</h3><p>Download the Windows app directly from this page.</p></li>
-        <li class="reveal"><span>02</span><h3>Enter the code</h3><p>Paste the short TRV code sent by your recruiter.</p></li>
-        <li class="reveal"><span>03</span><h3>Review and consent</h3><p>Confirm microphone and session-monitoring details in plain language.</p></li>
-        <li class="reveal"><span>04</span><h3>Take the interview</h3><p>Keep Truveil Secure open while you continue your call normally.</p></li>
-      </ol>
-
-      <div class="secure-demo reveal" aria-label="Truveil Secure check-in workflow preview">
-        <section class="secure-window">
-          <div class="secure-window-bar"><div><span class="brand-glyph mini" aria-hidden="true">T</span><strong>Truveil Secure</strong></div><span><i class="dot dot-clear"></i>Ready</span></div>
-          <div class="demo-layout">
-            <aside class="demo-steps">
-              <button class="active" type="button" data-demo-step="0"><span>01</span><strong>Session code</strong></button>
-              <button type="button" data-demo-step="1"><span>02</span><strong>Consent</strong></button>
-              <button type="button" data-demo-step="2"><span>03</span><strong>Connection</strong></button>
-            </aside>
-            <div class="demo-panels">
-              <article class="demo-panel active" data-demo-panel="0"><span class="eyebrow">Session code</span><h3>Join the interview your recruiter created.</h3><label>Code from your invite</label><code class="code-preview">TRV-482910</code><span class="secure-button">Continue</span></article>
-              <article class="demo-panel" data-demo-panel="1"><span class="eyebrow">Review and consent</span><h3>Know what the session uses before it starts.</h3><div class="consent-row"><i class="dot dot-clear"></i><span><strong>Microphone transcript</strong><small>Used for a live interview transcript</small></span></div><div class="consent-row"><i class="dot dot-clear"></i><span><strong>Foreground activity</strong><small>Timestamped app and restricted-site events</small></span></div><span class="secure-button">I understand and consent</span></article>
-              <article class="demo-panel" data-demo-panel="2"><span class="eyebrow">Connection health</span><h3>Ready means ready.</h3><div class="connection-meter"><span><i class="dot dot-clear"></i>Transcript relay</span><strong>Healthy</strong></div><div class="connection-meter"><span><i class="dot dot-clear"></i>Microphone</span><strong>Connected</strong></div><div class="connection-meter"><span><i class="dot dot-clear"></i>Session</span><strong>Waiting for interviewer</strong></div></article>
+      <section class="candidate-choice wrap">
+        <div>
+          <span class="eyebrow">INVITATION IN YOUR INBOX?</span>
+          <h2>You're in the right place.</h2>
+          <p class="tiny">
+            Enter the code your interviewer sent. We'll carry it into your
+            check-in.
+          </p>
+        </div>
+        <form novalidate class="invite-inline" data-invite-form="">
+          <div class="field">
+            <label for="home-code">Interview code</label
+            ><input
+              id="home-code"
+              name="code"
+              placeholder="TRV-123456"
+              maxlength="10"
+              autocomplete="off"
+              spellcheck="false"
+              required
+            /><span class="field-error" data-invite-error=""></span>
+          </div>
+          <button class="btn" type="submit">
+            Continue
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 12h14m-6-6 6 6-6 6" />
+            </svg>
+          </button>
+        </form>
+      </section>
+      <section class="statement wrap" id="in-motion">
+        <span class="eyebrow">A LITTLE CLARITY GOES A LONG WAY</span>
+        <h2>
+          Your interview. Your own thinking.<br /><em
+            >No surprises about what is shared.</em
+          >
+        </h2>
+        <p>
+          Know the rules, understand the collection notice, and arrive ready for
+          the conversation.
+        </p>
+      </section>
+      <section
+        class="scroll-story"
+        aria-label="Your Truveil interview preparation"
+      >
+        <div class="story-stage">
+          <div class="story-layout wrap">
+            <div class="story-copy">
+              <span class="eyebrow">FROM INVITATION TO INTRODUCTION</span>
+              <div class="story-step is-active">
+                <h3>
+                  <button aria-current="step" aria-controls="scene-policy">
+                    <span>01</span>Your invitation, made simple.
+                  </button>
+                </h3>
+                <p>
+                  Download Truveil Secure for Windows. Your interviewer's code
+                  takes you to the right session, without creating an account.
+                </p>
+              </div>
+              <div class="story-step">
+                <h3>
+                  <button aria-controls="scene-context">
+                    <span>02</span>Know exactly what is shared.
+                  </button>
+                </h3>
+                <p>
+                  Read the notice and allowed-tool policy. Ask about
+                  accommodations before you choose whether to consent.
+                </p>
+              </div>
+              <div class="story-step">
+                <h3>
+                  <button aria-controls="scene-review">
+                    <span>03</span>Settle in. Be yourself.
+                  </button>
+                </h3>
+                <p>
+                  Check your microphone and open your usual meeting app. The
+                  interviewer reviews session evidence, not an automated
+                  verdict.
+                </p>
+              </div>
+            </div>
+            <div class="story-visual">
+              <article class="story-scene is-active" id="scene-policy">
+                <div class="scene-bar">
+                  <img
+                    src="assets/brand/mark.png"
+                    width="17"
+                    height="20"
+                    alt=""
+                  /><b>truveil secure / Invitation</b
+                  ><span>01 / YOUR SESSION</span>
+                </div>
+                <div class="scene-body">
+                  <img
+                    class="scene-mascot"
+                    src="assets/brand/tavi-wave.webp"
+                    width="160"
+                    height="170"
+                    alt="Tavi welcomes you"
+                    loading="lazy"
+                  /><span class="eyebrow">YOU'RE IN THE RIGHT PLACE</span>
+                  <h4>A code.<br />A clear check-in.</h4>
+                  <div class="scene-code">TRV-482910</div>
+                  <div class="scene-row">
+                    <span>Platform</span><b>Windows beta</b>
+                  </div>
+                  <div class="scene-row">
+                    <span>Candidate account</span><b>Not required</b>
+                  </div>
+                  <p class="scene-note">
+                    Your interviewer will send your real invitation. This code
+                    is an example.
+                  </p>
+                </div>
+                <div class="scene-foot">
+                  <span>Illustrated workflow / Sample data</span
+                  ><span>One invitation</span>
+                </div>
+              </article>
+              <article class="story-scene" id="scene-context">
+                <div class="scene-bar">
+                  <img
+                    src="assets/brand/mark.png"
+                    width="17"
+                    height="20"
+                    alt=""
+                  /><b>truveil secure / Collection notice</b
+                  ><span>02 / YOUR CONSENT</span>
+                </div>
+                <div class="scene-body">
+                  <span class="eyebrow">READ BEFORE YOU CONSENT</span>
+                  <h4>Clear boundaries.<br />From the beginning.</h4>
+                  <div class="scene-row">
+                    <span>Shared during the session</span
+                    ><b>Microphone transcript</b>
+                  </div>
+                  <div class="scene-row">
+                    <span>Foreground activity</span
+                    ><b>App, window title, available URL</b>
+                  </div>
+                  <div class="scene-row">
+                    <span>Not collected</span
+                    ><b>Camera, screen, files, clipboard</b>
+                  </div>
+                  <div class="scene-event">
+                    <b>Restricted AI tools may be closed or refocused.</b>
+                    <p class="scene-note">
+                      Review the session policy and ask about tools you need
+                      before joining.
+                    </p>
+                  </div>
+                </div>
+                <div class="scene-foot">
+                  <span>Illustrated workflow / Sample data</span
+                  ><span>Consent before monitoring</span>
+                </div>
+              </article>
+              <article class="story-scene" id="scene-review">
+                <div class="scene-bar">
+                  <img
+                    src="assets/brand/mark.png"
+                    width="17"
+                    height="20"
+                    alt=""
+                  /><b>truveil secure / Ready to join</b
+                  ><span>03 / YOUR INTERVIEW</span>
+                </div>
+                <div class="scene-body">
+                  <img
+                    class="scene-mascot"
+                    src="assets/brand/tavi-listen.webp"
+                    width="160"
+                    height="170"
+                    alt="Tavi listens attentively"
+                    loading="lazy"
+                  /><span class="eyebrow">A MOMENT TO GET SETTLED</span>
+                  <h4>Check your mic.<br />Be yourself.</h4>
+                  <div class="scene-row">
+                    <span>Microphone</span><b>Complete the in-app check</b>
+                  </div>
+                  <div class="scene-row">
+                    <span>Video call</span><b>Use your usual meeting app</b>
+                  </div>
+                  <div class="scene-row">
+                    <span>Session evidence</span><b>Reviewed by a person</b>
+                  </div>
+                  <p class="scene-note">
+                    Truveil does not make hiring decisions. Your interviewer
+                    reviews the context with you.
+                  </p>
+                </div>
+                <div class="scene-foot">
+                  <span>Illustrated workflow / Sample data</span
+                  ><span>Your own thinking matters</span>
+                </div>
+              </article>
+              <div class="story-caption">
+                <span>A little preparation. A clearer beginning.</span
+                ><span>TRUVEIL SECURE</span>
+              </div>
+              <div class="story-progress" aria-hidden="true"><span></span></div>
             </div>
           </div>
-        </section>
-      </div>
-    </section>
-
-    <section class="session-section section">
-      <div class="session-copy reveal">
-        <span class="eyebrow">During the interview</span>
-        <h2>A status window, not a stress meter.</h2>
-        <p>Truveil Secure keeps its visible job narrow. You can see that the session, microphone, and transcript relay are healthy. There is no candidate-facing score and no performance theater.</p>
-        <ul>
-          <li>Visible session status the whole time</li>
-          <li>Clear notice if a restricted destination closes</li>
-          <li>One button to end the session</li>
-        </ul>
-      </div>
-      <div class="active-session reveal" aria-label="Truveil Secure active session preview">
-        <div class="active-title"><span>TRV-482910</span><strong><i class="dot dot-clear"></i>Session active</strong></div>
-        <div class="active-orbit" aria-hidden="true"><span></span><strong>TRV</strong></div>
-        <div class="active-health"><div><span>Transcript relay</span><strong>Healthy</strong></div><div><span>Microphone</span><strong>Connected</strong></div><div><span>Elapsed</span><strong data-elapsed>00:08:14</strong></div></div>
-        <p>Keep Truveil Secure open. Continue your call normally.</p>
-        <span class="end-button">End session</span>
-      </div>
-    </section>
-
-    <section class="privacy-section section" id="privacy">
-      <figure class="privacy-room reveal">
-        <img src="assets/generated/privacy-room.jpeg" alt="A sealed glass room within a dark evidence archive, generated for Truveil by Magic Hour">
-        <figcaption>Only the agreed session surface enters the record.</figcaption>
-      </figure>
-      <div class="privacy-card reveal">
-        <span class="eyebrow">Plain-language privacy</span>
-        <h2>What stays outside the session.</h2>
-        <div class="privacy-grid">
-          <article><span>01</span><h3>No camera or video</h3><p>Truveil Secure does not use your camera and does not record your screen.</p></article>
-          <article><span>02</span><h3>No personal files</h3><p>It does not read your documents, messages, clipboard, or browser history.</p></article>
-          <article><span>03</span><h3>No biometric analysis</h3><p>No eye tracking, emotion detection, facial scoring, or hidden candidate-facing risk score.</p></article>
         </div>
-        <div class="privacy-note"><strong>You stay in control.</strong><p>Consent is collected in the app before monitoring begins. You can end the session at any time. Truveil provides evidence to a human reviewer and does not make the hiring decision.</p></div>
+      </section>
+      <section class="section wrap" id="product">
+        <div class="section-heading reveal">
+          <div>
+            <span class="eyebrow">YOUR SIDE OF THE CONVERSATION</span>
+            <h2>Your words.<br /><em>In the full picture.</em></h2>
+          </div>
+          <p>
+            See how an answer becomes a transcript. This is an interactive
+            preview, not a live interview or a recording.
+          </p>
+        </div>
+        <div class="tour reveal">
+          <div class="tour-bar">
+            <div class="tour-title">
+              <img
+                src="assets/brand/mark.png"
+                width="20"
+                height="22"
+                alt=""
+              />truveil secure <span class="muted">/</span> Transcript preview
+            </div>
+            <span class="tour-label">Interactive preview / Sample data</span>
+          </div>
+          <div class="tour-main">
+            <section
+              class="tour-panel"
+              id="panel-interview"
+              data-preview="candidate"
+              aria-labelledby="candidate-demo-title"
+            >
+              <h3 id="candidate-demo-title">A conversation, as it unfolds.</h3>
+              <p class="tour-context">
+                Jordan Lee / Backend engineer / Sample interview
+              </p>
+              <div class="demo-toolbar">
+                <div
+                  class="demo-modes"
+                  role="group"
+                  aria-label="Transcript preview mode"
+                >
+                  <button data-demo-mode="sample" aria-pressed="true">
+                    Sample interview</button
+                  ><button data-demo-mode="custom" aria-pressed="false">
+                    Try your own
+                  </button>
+                </div>
+                <div class="demo-playback" data-sample-controls>
+                  <button class="demo-icon-button" data-demo-complete
+                    aria-label="Show full sample" title="Show full sample">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="m5 5 10 7-10 7ZM19 5v14" />
+                    </svg>
+                  </button>
+                  <label class="visually-hidden" for="demo-scenario"
+                    >Sample answer</label
+                  >
+                  <select id="demo-scenario" data-demo-scenario>
+                    <option value="grounded" selected>
+                      Production incident
+                    </option>
+                    <option value="assisted">Problem-solving approach</option>
+                  </select>
+                  <button
+                    class="demo-icon-button"
+                    data-demo-play
+                    aria-label="Pause sample answer"
+                    title="Pause sample answer"
+                  >
+                    <svg
+                      class="icon demo-pause-icon"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path d="M8 5v14M16 5v14" /></svg
+                    ><svg
+                      class="icon demo-play-icon"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path d="m8 5 11 7-11 7Z" />
+                    </svg>
+                  </button>
+                  <button
+                    class="demo-icon-button"
+                    data-demo-replay
+                    aria-label="Replay sample answer"
+                    title="Replay sample answer"
+                  >
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M3 10a9 9 0 1 1 1 8M3 4v6h6" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div class="demo-grid">
+                <div class="demo-transcript">
+                  <strong class="speaker"
+                    ><span class="initials">AK</span>ALEX / INTERVIEWER</strong
+                  >
+                  <p>Tell me about a production issue you worked through.</p>
+                  <strong class="speaker"
+                    ><span class="initials">JL</span
+                    ><span data-speaker-name>JORDAN / CANDIDATE</span></strong
+                  >
+                  <div class="demo-answer" data-sample-answer>
+                    <span data-transcript
+                      >We rolled back the release first. The queue was still
+                      replaying failed jobs, so I checked the Redis consumers
+                      before deploying again.</span
+                    ><span class="typing-caret" aria-hidden="true"></span>
+                  </div>
+                  <div data-custom-answer hidden>
+                    <button class="demo-icon-button" data-demo-clear
+                      aria-label="Clear answer" title="Clear answer">
+                      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7" />
+                      </svg>
+                    </button>
+                    <label class="visually-hidden" for="demo-answer"
+                      >Your interview answer</label
+                    ><textarea
+                      id="demo-answer"
+                      data-answer-input
+                      maxlength="5000"
+                      placeholder="Type or paste an interview answer..."
+                      aria-describedby="demo-text-privacy"
+                      spellcheck="false"
+                      autocomplete="off"
+                    ></textarea>
+                    <p id="demo-text-privacy" class="demo-privacy">
+                      Your practice answer stays on this device. Nothing is sent
+                      or saved.
+                    </p>
+                  </div>
+                  <div class="demo-transcript-status">
+                    <span class="tag" data-demo-status>Sample ready</span
+                    ><span data-word-count></span>
+                  </div>
+                </div>
+                <aside
+                  class="demo-events candidate-transcript-info"
+                  aria-label="Your transcript preview"
+                >
+                  <div class="eyebrow">TRANSCRIPT PREVIEW</div>
+                  <div class="signal-number">
+                    <strong data-candidate-words>0</strong><span>words</span>
+                  </div>
+                  <h4 data-candidate-state>Ready for your answer</h4>
+                  <div class="candidate-preview-row">
+                    <span>In a consented session</span
+                    ><strong
+                      >Microphone transcript + foreground activity</strong
+                    >
+                  </div>
+                  <div class="candidate-preview-row">
+                    <span>Not collected</span
+                    ><strong>Camera, screen, files or clipboard</strong>
+                  </div>
+                  <div class="candidate-preview-row">
+                    <span>Decisions</span><strong>Reviewed by a person</strong>
+                  </div>
+                  <p class="demo-privacy">
+                    This page does not access your microphone or monitor your
+                    apps. The Windows app explains collection before you
+                    consent.
+                  </p>
+                </aside>
+              </div>
+              <div class="demo-footer">
+                <span>Sample transcript / Not a live session</span
+                ><span>Your own thinking matters</span>
+              </div>
+              <p class="visually-hidden" role="status" data-demo-live></p>
+              <noscript
+                ><p>
+                  The typing preview needs JavaScript. The answer above is
+                  sample data.
+                </p></noscript
+              >
+            </section>
+          </div>
+        </div>
+        <div class="tour-caption">
+          <p>Practice only. Nothing is recorded, sent to an interviewer, or saved.</p>
+          <a class="text-link" href="https://truveil-recruiter.vercel.app/demo.html">Try the recruiter demo</a>
+        </div>
+      </section>
+      <section class="section wrap">
+        <div class="section-heading reveal">
+          <div>
+            <span class="eyebrow">THE PROCESS, WITHOUT THE GUESSWORK</span>
+            <h2>Less to figure out.<br /><em>More room to be you.</em></h2>
+          </div>
+          <p>
+            The candidate app shares session evidence with your interviewer. You
+            see the notice and allowed-tool policy before monitoring starts.
+          </p>
+        </div>
+        <div class="candidate-features">
+          <article class="feature">
+            <div>
+              <span class="eyebrow">BEFORE YOU JOIN</span>
+              <h3>Know the rules.</h3>
+              <p>
+                Review allowed apps, websites, and restricted AI tools. Ask
+                about accommodations or tools you need before you consent.
+              </p>
+            </div>
+            <img
+              src="assets/brand/tavi-checklist.webp"
+              width="140"
+              height="180"
+              loading="lazy"
+              alt="Tavi reviews a checklist"
+            />
+          </article>
+          <article class="feature">
+            <div>
+              <span class="eyebrow">DURING YOUR INTERVIEW</span>
+              <h3>Know what is shared.</h3>
+              <p>
+                Microphone transcript text, foreground app names, window titles,
+                and available browser destinations can be shared during your
+                session.
+              </p>
+            </div>
+            <img
+              src="assets/brand/tavi-listen.webp"
+              width="140"
+              height="180"
+              loading="lazy"
+              alt="Tavi listens attentively"
+            />
+          </article>
+        </div>
+      </section>
+      <section class="section evidence-band">
+        <div class="wrap evidence-layout">
+          <div>
+            <span class="eyebrow">ON YOUR COMPUTER</span>
+            <h2>Clear boundaries.<br /><em>Before you begin.</em></h2>
+            <p>
+              Truveil Secure supports your interviewer's tool policy. It is not
+              a replacement for the conversation, and it does not decide whether
+              you are hired.
+            </p>
+            <a class="text-link" href="privacy.html"
+              >Read the full collection notice
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 12h14m-6-6 6 6-6 6" /></svg
+            ></a>
+          </div>
+          <ol class="evidence-list">
+            <li>
+              <span>01</span>
+              <div>
+                <h3>Your microphone becomes a transcript</h3>
+                <p>
+                  Audio is used for live transcription. Raw audio is not
+                  included in the interviewer report.
+                </p>
+              </div>
+            </li>
+            <li>
+              <span>02</span>
+              <div>
+                <h3>Foreground activity becomes context</h3>
+                <p>
+                  The active app, window title, and browser host or URL may be
+                  visible to the interviewer when Windows makes them available.
+                  This is not a screen recording.
+                </p>
+              </div>
+            </li>
+            <li>
+              <span>03</span>
+              <div>
+                <h3>Restricted AI tools may be closed</h3>
+                <p>
+                  Truveil may close or refocus away from known restricted AI
+                  tools. These Windows controls are best effort. Other app
+                  switches are observed, not universally blocked.
+                </p>
+              </div>
+            </li>
+          </ol>
+        </div>
+      </section>
+      <section class="workflow-band">
+        <div class="wrap workflow">
+          <div class="workflow-head">
+            <span class="eyebrow">LET'S GET YOU SETTLED</span>
+            <h2>A small check-in.<br /><em>Then, your interview.</em></h2>
+            <img
+              class="workflow-mascot"
+              src="assets/brand/tavi-wave.webp"
+              width="220"
+              height="220"
+              loading="lazy"
+              alt="Tavi welcomes you"
+            />
+            <p class="workflow-note">
+              One code. A clear check-in. Then your interview.
+            </p>
+          </div>
+          <div>
+            <ol class="step-list">
+              <li>
+                <span class="step-number">01 /</span>
+                <div>
+                  <h3>Get Truveil Secure.</h3>
+                  <p>
+                    Download the Windows app and keep your invitation code
+                    nearby. No candidate account is required.
+                  </p>
+                </div>
+              </li>
+              <li>
+                <span class="step-number">02 /</span>
+                <div>
+                  <h3>Know what you're agreeing to.</h3>
+                  <p>
+                    Enter your code, review the allowed tools and collection
+                    details, then choose whether to consent.
+                  </p>
+                </div>
+              </li>
+              <li>
+                <span class="step-number">03 /</span>
+                <div>
+                  <h3>Check your mic. Be yourself.</h3>
+                  <p>
+                    Complete the microphone check, open your meeting, and let
+                    your interviewer know you're ready.
+                  </p>
+                </div>
+              </li>
+            </ol>
+            <a class="text-link" href="guide.html"
+              >Open my preparation checklist
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 12h14m-6-6 6 6-6 6" /></svg
+            ></a>
+          </div>
+        </div>
+      </section>
+      <section class="section wrap privacy-band">
+        <div class="privacy-copy">
+          <span class="eyebrow">YOU DESERVE TO KNOW</span>
+          <h2>An interview check.<br /><em>With clear boundaries.</em></h2>
+          <p>
+            After consent, Truveil transcribes your microphone and reports
+            foreground activity during the session. It does not record your
+            camera or screen, read your files, or collect your clipboard.
+          </p>
+          <ul class="check-list">
+            <li>
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m5 12 4 4L19 6" />
+              </svg>
+              No camera or screen recording
+            </li>
+            <li>
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m5 12 4 4L19 6" />
+              </svg>
+              No biometric scoring
+            </li>
+            <li>
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m5 12 4 4L19 6" />
+              </svg>
+              Your session policy is explained before you join
+            </li>
+            <li>
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m5 12 4 4L19 6" />
+              </svg>
+              A person reviews the evidence
+            </li>
+          </ul>
+          <a class="text-link" href="privacy.html"
+            >Understand what's collected
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 12h14m-6-6 6 6-6 6" /></svg
+          ></a>
+        </div>
+        <div class="privacy-art">
+          <span class="privacy-label">Consent first. Always.</span
+          ><img
+            src="assets/brand/tavi-checklist.webp"
+            width="200"
+            height="210"
+            loading="lazy"
+            alt="Tavi reads the collection checklist"
+          />
+          <p>No surprises. That's the idea.</p>
+        </div>
+      </section>
+      <section class="section wrap faq">
+        <div>
+          <span class="eyebrow">BEFORE YOUR FIRST HELLO</span>
+          <h2>A few things<br /><em>worth knowing.</em></h2>
+          <a class="text-link" href="support.html"
+            >Need a hand?
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 12h14m-6-6 6 6-6 6" /></svg
+          ></a>
+        </div>
+        <div>
+          <details>
+            <summary>Do I need to create an account?</summary>
+            <p>
+              No. Your interviewer sends a session code. Use that code in
+              Truveil Secure for Windows and complete the consent and microphone
+              checks.
+            </p>
+          </details>
+          <details>
+            <summary>What if I don't want to consent?</summary>
+            <p>
+              Speak with your interviewer before the session. You can choose not
+              to start monitoring and discuss an alternative interview
+              arrangement.
+            </p>
+          </details>
+          <details>
+            <summary>Does Truveil replace Zoom, Teams, or Meet?</summary>
+            <p>
+              No. Keep using your normal meeting app. Truveil Secure runs
+              alongside it and follows the policy your interviewer shares.
+            </p>
+          </details>
+          <details>
+            <summary>I haven't received an invitation yet.</summary>
+            <p>
+              Ask your interviewer for the TRV code. If you're interested in
+              future availability, join the waitlist and we'll send product
+              updates.
+            </p>
+          </details>
+        </div>
+      </section>
+      <section class="wrap closing">
+        <div>
+          <span class="eyebrow">A GOOD FIRST IMPRESSION STARTS WITH YOU</span>
+          <h2>A little preparation.<br /><em>A lot more confidence.</em></h2>
+          <a class="btn" href="guide.html"
+            >Let's get you ready
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 12h14m-6-6 6 6-6 6" /></svg
+          ></a>
+          <p>
+            Just exploring?
+            <a href="waitlist.html"><u>Join the waitlist for updates.</u></a>
+          </p>
+        </div>
+        <img
+          src="assets/brand/tavi-celebrate.webp"
+          width="215"
+          height="230"
+          loading="lazy"
+          alt="Tavi cheers you on"
+        />
+      </section>
+    </main>
+    <footer class="footer wrap">
+      <div class="footer-top">
+        <div>
+          <a class="brand" href="index.html"
+            ><img
+              src="assets/brand/mark.png"
+              width="36"
+              height="34"
+              alt=""
+            /><span>truveil</span></a
+          >
+          <p>Interview integrity.<br />Evidence for people, not verdicts.</p>
+        </div>
+        <div class="footer-links">
+          <strong>GET TO KNOW US</strong><a href="index.html">For candidates</a
+          ><a href="guide.html">Getting started</a
+          ><a href="waitlist.html">Join the waitlist</a
+          ><a href="login.html">Join an interview</a
+          ><a download="" href="/downloads/TruveilSecure-Setup-1.0.0.exe"
+            >Download for Windows</a
+          >
+        </div>
+        <div class="footer-links">
+          <strong>THE IMPORTANT DETAILS</strong
+          ><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a
+          ><a href="legal.html">Trust &amp; transparency</a
+          ><a href="support.html">Get in touch</a>
+        </div>
       </div>
-    </section>
-
-    <section class="scope-section section">
-      <div class="section-heading reveal">
-        <span class="eyebrow">What is recorded</span>
-        <h2>Narrow inputs. Reviewable events.</h2>
-        <p>The recruiter receives a timestamped record of the agreed interview surface, not a portrait of your life outside it.</p>
+      <div class="footer-bottom">
+        <span>© 2026 Truveil. Made for thoughtful conversations.</span
+        ><span>Windows beta · Human review required</span>
       </div>
-      <div class="scope-ledger reveal">
-        <div><span><i class="dot dot-system"></i>Microphone transcript</span><strong>Live text for the interview record</strong></div>
-        <div><span><i class="dot"></i>Foreground activity</span><strong>App, title, or browser host when Windows exposes it</strong></div>
-        <div><span><i class="dot dot-flag"></i>Restricted destination</span><strong>Timestamp, source, closure, and return</strong></div>
-        <div><span><i class="dot dot-clear"></i>Connection health</span><strong>Relay status and latency</strong></div>
+      <div class="footer-wordmark" aria-hidden="true">truveil.</div>
+    </footer>
+    <aside class="helper">
+      <div class="helper-panel" id="tavi-help" hidden>
+        <button class="helper-close" aria-label="Close help">×</button>
+        <h3>A little help?</h3>
+        <p>
+          I'm Tavi, your Truveil guide. Learn how session monitoring works and
+          get ready for your interview.
+        </p>
+        <a href="guide.html"
+          >Get ready for your interview
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 12h14m-6-6 6 6-6 6" /></svg></a
+        ><a href="privacy.html"
+          >Understand your privacy
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 12h14m-6-6 6 6-6 6" /></svg></a
+        ><a href="support.html"
+          >Talk to the Truveil team
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 12h14m-6-6 6 6-6 6" /></svg
+        ></a>
       </div>
-    </section>
-
-    <section class="faq-section section" id="questions">
-      <div class="section-heading reveal"><span class="eyebrow">Candidate questions</span><h2>Know before you install.</h2></div>
-      <div class="faq-list reveal">
-        <details><summary>Does Truveil record my screen?<span>+</span></summary><p>No. Truveil records timestamped session events, not screen video.</p></details>
-        <details><summary>Does it use my camera?<span>+</span></summary><p>No camera video is collected or used.</p></details>
-        <details><summary>What happens to microphone audio?<span>+</span></summary><p>The microphone feeds the live transcript. Fallback audio is temporary and deleted after transcription; raw audio is not included in the review report.</p></details>
-        <details><summary>Can Truveil decide whether I pass?<span>+</span></summary><p>No. Truveil does not automatically decide, rank, reject, or score you as a person. A human reviews the session record.</p></details>
-        <details><summary>Can I stop the session?<span>+</span></summary><p>Yes. You can end the session from Truveil Secure at any time.</p></details>
-      </div>
-    </section>
-
-    <section class="download-section section reveal" id="download">
-      <span class="eyebrow">Ready for your interview</span>
-      <h2>Check in with clarity.</h2>
-      <p>Download Truveil Secure for Windows. Your recruiter provides the session code.</p>
-      <div class="hero-actions"><a class="button button-primary primary-action" href="/downloads/TruveilSecure-Setup-1.0.0.exe" download>Download Windows installer</a><a class="button button-ghost" href="/support.html">Get help</a></div>
-      <code>Windows 10/11 - Paid beta - Candidate consent required</code>
-    </section>
-  </main>
-
-  <footer>
-    <div class="footer-brand"><a class="brand" href="#top"><span class="brand-glyph" aria-hidden="true">T</span><span>Truveil Secure</span></a><p>Consent-based candidate session verification.</p><span>&copy; 2026 Truveil</span></div>
-    <div><strong>Candidate</strong><a href="#check-in">Check-in</a><a href="#privacy">Privacy</a><a href="/downloads/TruveilSecure-Setup-1.0.0.exe" download>Download</a></div>
-    <div><strong>Help</strong><a href="/support.html">Support</a><a href="/downloads/TruveilSecure-Setup-1.0.0.exe.sha256" download>SHA-256 checksum</a></div>
-    <div><strong>Legal</strong><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a><a href="/legal.html">Trust &amp; Legal</a></div>
-  </footer>
-  <script src="site.js"></script>
-</body>
+      <button
+        class="helper-toggle"
+        aria-label="Get help from Tavi"
+        aria-expanded="false"
+        aria-controls="tavi-help"
+      >
+        <img src="assets/brand/tavi-wave.webp" width="50" height="50" alt="" />
+      </button>
+    </aside>
+    <div class="toast" role="status" hidden></div>
+  </body>
 </html>

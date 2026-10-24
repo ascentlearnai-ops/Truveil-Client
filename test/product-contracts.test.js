@@ -2,12 +2,20 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 
+test('candidate typing bundle contains no recruiter scoring or answer transmission', () => {
+  const bundle = fs.readFileSync('interview-demo.js', 'utf8');
+  assert.doesNotMatch(bundle, /risk-model|assistantStyleDensity|AI-assistance|Risk engine|behavioralAiEventCount|local-risk|authorship probability/);
+  assert.doesNotMatch(bundle, /fetch\(|XMLHttpRequest|localStorage|sessionStorage/);
+  assert.match(bundle, /Local preview/);
+});
+
 test('client website downloads the local Windows installer', () => {
   const html = fs.readFileSync('index.html', 'utf8');
   assert.match(html, /\/downloads\/TruveilSecure-Setup-1\.0\.0\.exe/);
   assert.doesNotMatch(html, /github\.com\/.*releases/i);
-  assert.match(html, /secure-demo/);
-  assert.match(html, /secure-window/);
+  assert.match(html, /data-invite-form/);
+  assert.match(html, /guide\.html/);
+  assert.match(html, /assets\/brand\/tavi/);
   assert.doesNotMatch(html, /candidate-app-real\.png|truveil-horizontal-transparent\.png/i);
 });
 
@@ -49,7 +57,7 @@ test('client legal pages disclose product boundaries', () => {
   assert.match(privacy, /No camera video/i);
   assert.match(privacy, /No screen recording/i);
   assert.match(privacy, /No clipboard collection/i);
-  assert.match(terms, /does not automatically decide/i);
+  assert.match(terms, /does\s+not\s+automatically\s+decide/i);
   assert.match(legal, /No hidden candidate-facing risk score/i);
 });
 
