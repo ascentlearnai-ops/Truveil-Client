@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Interview window sharing</title><link rel="stylesheet" href="popup.css"></head>
+<body>
+  <main>
+    <h1>Interview window sharing</h1>
+    <p id="status" role="status" aria-live="polite">Not sharing</p>
+    <p>Only this normal browser window will be enrolled. Use a dedicated interview window with no personal tabs. Hostnames and tab activity are shared, never page content or full addresses.</p>
+    <form id="share-form">
+      <label for="pairing-code">Candidate pairing code</label>
+      <textarea id="pairing-code" rows="3" maxlength="2048" autocomplete="off" spellcheck="false" required></textarea>
+      <label class="choice"><input id="observe" type="checkbox" required> Share hostname-only activity from this window</label>
+      <label class="choice"><input id="close" type="checkbox"> Allow requested tabs in this window to be closed</label>
+      <p class="detail">Meeting hosts are protected. Closing targets a tab, not a locked page; a page can change just before a close.</p>
+      <button type="submit" id="share">Share this window</button>
+    </form>
+    <button type="button" id="stop" disabled>Stop sharing</button>
+    <p id="error" role="alert"></p>
+  </main>
+  <script src="popup.js"></script>
+</body>
+</html>

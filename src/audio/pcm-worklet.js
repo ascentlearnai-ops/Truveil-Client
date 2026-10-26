@@ -5,7 +5,7 @@ class TruveilPcmProcessor extends AudioWorkletProcessor {
     this.sourceRate = sampleRate;
     this.ratio = this.sourceRate / this.targetRate;
     this.pending = [];
-    this.frameSamples = Math.round(this.targetRate * 0.2);
+    this.frameSamples = Math.round(this.targetRate * 0.05);
     this.sourceBuffer = [];
     this.sourcePosition = 0;
   }
@@ -24,7 +24,8 @@ class TruveilPcmProcessor extends AudioWorkletProcessor {
       this.pending.push(value < 0 ? value * 0x8000 : value * 0x7fff);
       this.sourcePosition += this.ratio;
     }
-    const consumed = Math.floor(this.sourcePosition);
+    // Keep any advance past this block for the next quantum (e.g. 48k / 128).
+    const consumed = Math.min(Math.floor(this.sourcePosition), this.sourceBuffer.length);
     if (consumed > 0) {
       this.sourceBuffer.splice(0, consumed);
       this.sourcePosition -= consumed;

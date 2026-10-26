@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Truveil Interview Window Sharing",
+  "version": "0.1.0",
+  "description": "Explicitly share hostname-only tab activity from one candidate-selected interview window.",
+  "minimum_chrome_version": "116",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA7oanSO2qetyyeU1Nt8fgzwx7LAFqZYdZKEToblNGi7L33steoauZeX3IcDWsRjuGkOhQi1q6lyzOEm7Mvx1rX4ihep4TX/OI6Yq4JfkTwQo3Q0WfE0tRW59QwwcokLHz1BqcaL+/5Qrt5p123pE98E3FjjuOpvvZpyxvOCOPvjsrJ9yMnVuwzuR/3dKp/rPsS6W+YrtMTEKBlIhwuQDgRYzoG6V1NlXPMTlcPhztLR5b7kdBYr/dK9TCLcZCt8psPGJ8AUFXc7isZbmEEygdVbW/qwYaFee0oDyS+4kWwusTx2aXYGh3N8Ut0lj6uyla6zCDhuZHIxlMMDtBKU96AwIDAQAB",
+  "incognito": "not_allowed",
+  "permissions": ["tabs"],
+  "background": { "service_worker": "service-worker.js" },
+  "action": { "default_popup": "popup.html", "default_title": "Truveil interview window sharing" },
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; script-src 'self'; object-src 'none'; connect-src ws://127.0.0.1:*; base-uri 'none'; frame-ancestors 'none'"
+  }
+}

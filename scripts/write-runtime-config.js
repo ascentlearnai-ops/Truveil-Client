@@ -6,6 +6,7 @@ const production = process.argv.includes('--production');
 const outputPath = path.join(__dirname, '..', 'src', 'config', 'runtime-config.json');
 
 const config = {
+  demoRelayUrl: process.env.TRUVEIL_DEMO_RELAY_URL || '',
   apiBaseUrl: process.env.TRUVEIL_API_BASE_URL || 'http://localhost:3001',
   supabaseUrl: process.env.TRUVEIL_SUPABASE_URL || process.env.SUPABASE_URL || '',
   supabaseAnonKey: process.env.TRUVEIL_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || ''
@@ -13,6 +14,7 @@ const config = {
 
 const missing = Object.entries(config)
   .filter(([key, value]) => {
+    if (key === 'demoRelayUrl') return false;
     if (key === 'apiBaseUrl') return !value;
     return production && !value;
   })

@@ -42,7 +42,8 @@ test('candidate consent clearly discloses collected and excluded information', (
   const html = fs.readFileSync('src/renderer/index.html', 'utf8');
   const renderer = fs.readFileSync('src/renderer/session.js', 'utf8');
   assert.match(html, /Microphone transcript/);
-  assert.match(html, /Foreground activity/);
+  assert.match(html, /Optional browser sharing/);
+  assert.match(renderer, /legacy \? 'Foreground activity'/);
   assert.match(html, /No camera/);
   assert.match(html, /No screen recording/);
   assert.match(html, /No file or clipboard access/);
@@ -66,7 +67,7 @@ test('candidate uses secure live transcription before fallback audio', () => {
   assert.match(source, /startLiveTranscription\(\)/);
   assert.match(source, /getTranscriptionToken/);
   assert.match(source, /AudioWorkletNode/);
-  assert.match(source, /new WebSocket\(url, \['token', tokenResult\.accessToken\]\)/);
+  assert.match(source, /new WebSocket\(url, \['bearer', tokenResult\.accessToken\]\)/);
   assert.doesNotMatch(source, /SpeechRecognition|webkitSpeechRecognition/);
   assert.match(source, /startAudioFallback/);
 });
@@ -75,8 +76,10 @@ test('live transcript cadence uses stable utterance ids and balanced fallback ch
   const renderer = fs.readFileSync('src/renderer/session.js', 'utf8');
   const main = fs.readFileSync('main.js', 'utf8');
   assert.match(renderer, /const AUDIO_SEGMENT_MS = 2500/);
-  assert.match(renderer, /sessionStart > 8000/);
-  assert.match(renderer, /lastFinalTranscriptAt > 9000/);
+  assert.match(renderer, /now - Math\.max\(sessionStart, liveAttemptStartedAt\) > 9000/);
+  assert.match(renderer, /liveTokenPending \|\| liveReconnectTimer/);
+  assert.match(renderer, /Math\.max\(lastFinalTranscriptAt, lastProviderResultAt\)/);
+  assert.match(renderer, /progressAt > 9000/);
   assert.match(renderer, /endpointing:\s*'300'/);
   assert.match(renderer, /utterance_end_ms:\s*'1000'/);
   assert.match(renderer, /setInterval\(\(\) => \{[\s\S]*KeepAlive[\s\S]*\}, 4000\)/);
@@ -96,15 +99,22 @@ test('runtime config does not contain transcription provider secrets', () => {
 
 test('packaged client includes the PCM worklet and transcript quality modules', () => {
   const build = fs.readFileSync('electron-builder.yml', 'utf8');
-  assert.match(build, /src\/audio\/\*\*\/\*/);
-  assert.match(build, /src\/transcription\/\*\*\/\*/);
+  assert.match(build, /src\/(?:audio\/)?\*\*\/\*/);
+  assert.match(build, /src\/(?:transcription\/)?\*\*\/\*/);
+  assert.match(build, /browser-extension\/protocol\.js/);
+  assert.match(build, /extraResources:[\s\S]*from: browser-extension[\s\S]*to: browser-extension/);
+  const release = fs.readFileSync('scripts/release-artifact.js', 'utf8');
+  assert.match(release, /walk\('browser-extension'\)/);
+  assert.match(release, /Packaged browser extension is missing or stale/);
 });
 
-test('ordinary destinations are observed while known restricted targets are closed', () => {
+test('legacy activity remains advisory and never uses a global close shortcut', () => {
   const source = fs.readFileSync('main.js', 'utf8');
   assert.match(source, /unlisted:\s*true/);
   assert.match(source, /closeForegroundRestrictedTarget/);
-  assert.match(source, /policyDecision:\s*decision\.unlisted\s*\?\s*'unlisted'/);
+  assert.match(source, /policyDecision:\s*decision\.allowed\s*\?\s*'allowed'\s*:\s*'restricted'/);
+  assert.doesNotMatch(source, /SendKeys|['"]\^w['"]|taskkill/i);
+  assert.match(source, /async function handleRecruiterAction/);
 });
 
 test('candidate secure join authenticates before session membership is created', () => {
@@ -135,7 +145,8 @@ test('storage fallback treats duplicate uploads as idempotent but fails on missi
 
 test('candidate policy summary renders recruiter blocked-site policy', () => {
   const renderer = fs.readFileSync('src/renderer/session.js', 'utf8');
-  assert.match(renderer, /Blocked website/);
+  assert.match(renderer, /Restricted destination/);
+  assert.match(renderer, /All apps and websites are allowed/);
   assert.match(renderer, /blocked\.slice\(0, 8\)\.join\(', '\)/);
   assert.match(renderer, /summary\.hidden = false/);
   assert.doesNotMatch(renderer, /summary\.hidden = true/);
@@ -144,5 +155,6 @@ test('candidate policy summary renders recruiter blocked-site policy', () => {
 test('live transcription tolerates repeated transient reconnects before fallback', () => {
   const renderer = fs.readFileSync('src/renderer/session.js', 'utf8');
   assert.match(renderer, /liveReconnectAttempts = 0/);
-  assert.match(renderer, /liveReconnectAttempts <= 5/);
+  assert.match(renderer, /const LIVE_MAX_RETRIES = 5/);
+  assert.match(renderer, /liveReconnectAttempts <= LIVE_MAX_RETRIES/);
 });

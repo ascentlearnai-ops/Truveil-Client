@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Choose Windows or macOS for Truveil Secure. Mac installers become available after native validation." />
+    <meta name="theme-color" content="#edf7ff" />
+    <title>Download Truveil Secure</title>
+    <link rel="icon" href="assets/brand/favicon.png" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="download.css" />
+    <script src="site.js" defer></script>
+    <script src="download-platform.js" defer></script>
+  </head>
+  <body data-audience="candidate">
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-nav wrap">
+      <a class="brand" href="index.html"><img src="assets/brand/mark.png" width="36" height="34" alt="" /><span>truveil</span></a>
+      <nav class="nav-center" id="main-navigation" aria-label="Main navigation">
+        <a href="index.html">For candidates</a><a href="guide.html">Getting started</a><a href="login.html">Join an interview</a>
+      </nav>
+      <div class="nav-account"><a href="login.html">Join an interview</a><a class="btn small" href="#download">Download now</a></div>
+      <button class="menu-toggle" aria-label="Open navigation" aria-expanded="false" aria-controls="main-navigation"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg></button>
+    </header>
+    <main id="main" class="wrap">
+      <div class="form-shell download-layout">
+        <section class="form-story">
+          <span class="overline">A little preparation. More confidence.</span>
+          <h1>Truveil<br /><em>Secure.</em></h1>
+          <p>Your interview starts with a clear invitation and your permission.</p>
+          <img src="assets/brand/tavi-checklist.webp" width="250" height="270" alt="Tavi, the Truveil padlock mascot, ready to help you prepare" />
+          <div class="story-bottom">For your next conversation.</div>
+        </section>
+        <section class="form-side" id="download" aria-labelledby="download-title">
+          <p class="eyebrow">DESKTOP APP</p>
+          <h2 id="download-title">Meet your interview companion.</h2>
+          <p>Download the candidate app and keep your interviewer's TRV invitation code handy.</p>
+          <fieldset class="download-platform" aria-label="Operating system">
+            <legend>Choose your computer</legend>
+            <label><input type="radio" name="download-platform" value="win32" checked />Windows</label>
+            <label><input type="radio" name="download-platform" value="darwin" />macOS</label>
+          </fieldset>
+          <section class="download-panel" id="windows-download" aria-label="Windows download">
+            <a class="btn" download href="/downloads/TruveilSecure-Setup-1.0.0.exe" aria-label="Download Truveil Secure for Windows">Download for Windows</a>
+            <p class="fine-print">Version 1.0.0 &middot; Windows 10 / 11 &middot; 64-bit (x64)</p>
+            <p><a href="/downloads/TruveilSecure-Setup-1.0.0.exe.sha256" download>Download SHA-256 checksum</a></p>
+            <p class="fine-print">Unsigned beta. Windows may show a security warning. Windows ARM devices have not been verified.</p>
+          </section>
+          <section class="download-panel" id="mac-download" data-app="truveil-secure" data-version="1.0.0" aria-label="Mac download" hidden>
+            <fieldset class="download-platform download-architecture">
+              <legend>Mac processor</legend>
+              <label><input type="radio" name="download-arch" value="arm64" checked />Apple Silicon</label>
+              <label><input type="radio" name="download-arch" value="x64" />Intel</label>
+            </fieldset>
+            <p class="fine-print">macOS 12 or later &middot; Apple menu &gt; About This Mac to check your processor.</p>
+            <p class="fine-print">Allow Truveil Secure in System Settings &gt; Privacy &amp; Security &gt; Microphone when you join. Browser sharing uses the same Chrome or Edge extension.</p>
+            <p id="mac-download-status" role="status">Mac installer not published yet. Native Mac testing and release validation are required.</p>
+            <a class="btn" id="mac-download-link" download hidden>Download for macOS</a>
+            <a id="mac-checksum-link" download hidden>Download SHA-256 checksum</a>
+          </section>
+          <noscript><p>The Windows download is available above. Enable JavaScript to check Mac installer availability.</p></noscript>
+          <h3>Before you begin</h3>
+          <p>You need a valid invitation from your interviewer. Fresh guest sign-in is still being validated; downloading does not guarantee access to an interview.</p>
+          <p>Review the collection notice before joining. External AI-text review is optional, and you do not need to add any API keys.</p>
+          <p><a href="guide.html">Read the setup guide</a> &middot; <a href="support.html">Get help</a></p>
+          <p>Running the interview? <a href="https://truveil-recruiter.vercel.app/download.html">Download Truveil Recruiter instead.</a></p>
+        </section>
+      </div>
+    </main>
+    <footer class="footer wrap"><div class="footer-top"><div><a class="brand" href="index.html"><span>truveil</span></a><p>Evidence for people, not verdicts.</p></div><div class="footer-links"><strong>THE IMPORTANT DETAILS</strong><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="legal.html">Trust &amp; transparency</a></div></div><div class="footer-bottom"><span>&copy; 2026 Truveil.</span><span>Desktop beta &middot; Human review required</span></div></footer>
+  </body>
+</html>

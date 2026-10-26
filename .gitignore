@@ -11,3 +11,5 @@ out/
 !downloads/TruveilSecure-Setup-1.0.0.exe
 .vercel
 .env*
+__pycache__/
+*.py[cod]

@@ -6,19 +6,31 @@ const {
   transcriptFingerprint
 } = require('../src/transcription/quality');
 
-test('rejects low-confidence final transcripts and silence hallucinations', () => {
+test('zero confidence is low confidence; missing or invalid confidence stays unknown', () => {
+  const speech = { text: 'I would retry the job.', rms: 0.03, peak: 0.2 };
+  assert.equal(assessTranscript({ ...speech, confidence: 0 }).reason, 'low-confidence');
+  for (const confidence of [undefined, null, '', NaN, 2, -1]) {
+    const result = assessTranscript({ ...speech, confidence });
+    assert.equal(result.accepted, true);
+    assert.equal(result.confidence, undefined);
+  }
+});
+
+test('retains low-confidence speech for review but rejects silence hallucinations', () => {
   assert.equal(assessTranscript({
     text: 'Thank you for watching.',
     confidence: 0.91,
     rms: 0.02,
     peak: 0.12
   }).accepted, false);
-  assert.equal(assessTranscript({
+  const uncertain = assessTranscript({
     text: 'I led the migration and rolled it back after the queue failed.',
     confidence: 0.31,
     rms: 0.02,
     peak: 0.12
-  }).accepted, false);
+  });
+  assert.equal(uncertain.accepted, true);
+  assert.equal(uncertain.qualityReason, 'low-confidence');
   assert.equal(assessTranscript({
     text: 'I led the migration and rolled it back after the queue failed.',
     confidence: 0.88,
@@ -40,6 +52,15 @@ test('accepts clear speech and catches duplicate final events', () => {
 test('keeps quiet but credible speech instead of treating it as silence', () => {
   const text = 'I changed the cache key and verified the fix with a canary deploy.';
   assert.equal(assessTranscript({ text, confidence: 0.72, rms: 0.005, peak: 0.032 }).accepted, true);
+});
+
+test('short streaming spans preserve natural acknowledgements and single-letter words', () => {
+  for (const text of ['I', 'a', 'yeah', 'okay', 'right', 'so', 'Um,']) {
+    const result = assessTranscript({ text, confidence: 0.91, rms: 0.03, peak: 0.12 });
+    assert.equal(result.accepted, true, text);
+    assert.equal(result.text, text);
+    assert.equal(result.words, 1);
+  }
 });
 
 test('does not discard similar but meaningfully different technical answers', () => {

@@ -6,14 +6,21 @@
   "author": "Truveil Inc.",
   "scripts": {
     "test": "node --test test/*.test.js",
+    "brand:sync": "node scripts/sync-brand-assets.cjs --sync",
+    "brand:check": "node scripts/sync-brand-assets.cjs --check",
     "release:check": "node scripts/check-release.js",
     "check": "node --check main.js && node --check preload.js && node --check src/renderer/session.js",
-    "prestart": "node scripts/write-runtime-config.js",
+    "prestart": "node scripts/sync-brand-assets.cjs --check && node scripts/write-runtime-config.js",
     "start": "electron .",
-    "prebuild:mac": "node scripts/write-runtime-config.js --production",
-    "build:mac": "electron-builder --mac",
-    "prebuild:win": "node scripts/write-runtime-config.js --production",
-    "build:win": "electron-builder --win"
+    "prebuild:mac": "node scripts/mac-release.cjs --check-host",
+    "build:mac": "node scripts/mac-release.cjs --build",
+    "build:mac:arm64": "node scripts/mac-release.cjs --build --arch arm64",
+    "build:mac:x64": "node scripts/mac-release.cjs --build --arch x64",
+    "release:mac:check": "node scripts/mac-release.cjs --verify",
+    "release:mac:stage": "node scripts/mac-release.cjs --stage",
+    "prebuild:win": "node scripts/sync-brand-assets.cjs --check && node scripts/write-runtime-config.js --production",
+    "build:win": "electron-builder --win",
+    "postbuild:win": "node scripts/release-artifact.js --stage"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.106.2",

@@ -1,0 +1,227 @@
+{
+  "schema": 1,
+  "brand": "truveil",
+  "logoSource": "brand/mark.png",
+  "logoSourceSha256": "67dc29ef1d8c3af1d6beae66cc05f8440fb966f6f7d396be7b00d97451c8f16f",
+  "sourceInventoryHash": "5b55ddc5901e2bd8c4443b5449b47aca80e568cf9ea1aff937843774a22ca75c",
+  "files": [
+    {
+      "path": "assets/brand/app-icon.png",
+      "sha256": "22a0349e534f0b85999d393bfe619c77dc953c4cc7f51da510d738e08cf9c081",
+      "source": "brand/mark.png",
+      "derived": true
+    },
+    {
+      "path": "assets/brand/candidate-hq-poster.webp",
+      "sha256": "df5916f5ef5745de772f0d5832dee9d4012bd34f484016d7bda7ae4bf6e406c4",
+      "source": "brand/candidate-hq-poster.webp"
+    },
+    {
+      "path": "assets/brand/candidate-hq.mp4",
+      "sha256": "e33150d005c63b00a191519494394a6b12fc3a419ac5ad517743e8f939bf71ab",
+      "source": "brand/candidate-hq.mp4"
+    },
+    {
+      "path": "assets/brand/candidate-look.mp4",
+      "sha256": "f06f99724fcf39467e3fe462bdb5b36cdb25d8b785ef79095b477a0e43ead8fd",
+      "source": "brand/candidate-look.mp4"
+    },
+    {
+      "path": "assets/brand/candidate-motion-poster.webp",
+      "sha256": "1493acc3ebc7c19b41ca8fb3817de07ff21d20170b16814076185fc095efc86e",
+      "source": "brand/candidate-motion-poster.webp"
+    },
+    {
+      "path": "assets/brand/candidate-motion.mp4",
+      "sha256": "79eb601f4c726ca1257e8a09ed9aed01f930518911d5ae3f25ba73f153790844",
+      "source": "brand/candidate-motion.mp4"
+    },
+    {
+      "path": "assets/brand/candidate.webp",
+      "sha256": "a6f011470865c325909e3f6e71ad9f6819558aacd83217427079a5cd36502165",
+      "source": "brand/candidate.webp"
+    },
+    {
+      "path": "assets/brand/favicon.png",
+      "sha256": "d74ced9b42722e85b80919ae15c3138f63a3241369856afb97a14f1541a5df82",
+      "source": "brand/favicon.png"
+    },
+    {
+      "path": "assets/brand/hero.webp",
+      "sha256": "57bedbd61ac6f227b34316b18d45b08358d7c72532746d36902b68e8a9e5cb93",
+      "source": "brand/hero.webp"
+    },
+    {
+      "path": "assets/brand/mark.png",
+      "sha256": "67dc29ef1d8c3af1d6beae66cc05f8440fb966f6f7d396be7b00d97451c8f16f",
+      "source": "brand/mark.png"
+    },
+    {
+      "path": "assets/brand/recruiter-hq-poster.webp",
+      "sha256": "77e82e0f87d7785bf2772323f07694336b2cdc58c9a08a7aaff6bbdceef0445b",
+      "source": "brand/recruiter-hq-poster.webp"
+    },
+    {
+      "path": "assets/brand/recruiter-hq.mp4",
+      "sha256": "236d92b637d655c54f539914862509ff7e2738e15bb85062b27e53e13295db11",
+      "source": "brand/recruiter-hq.mp4"
+    },
+    {
+      "path": "assets/brand/recruiter-look.mp4",
+      "sha256": "402fad84dd8e722eb833865918b09367bceb0fd8c6af4505943046018b0f2df4",
+      "source": "brand/recruiter-look.mp4"
+    },
+    {
+      "path": "assets/brand/recruiter-motion-poster.webp",
+      "sha256": "8f17045737c1bf5cc3578d7a8cd451ab1425008b173b420dd06b5b07464f42bc",
+      "source": "brand/recruiter-motion-poster.webp"
+    },
+    {
+      "path": "assets/brand/recruiter-motion.mp4",
+      "sha256": "c559b4741f27ff8a23dd5ec0d09c1cf3320e9f01584f57912739a950eb310196",
+      "source": "brand/recruiter-motion.mp4"
+    },
+    {
+      "path": "assets/brand/tavi-celebrate.webp",
+      "sha256": "e7d59895673e963a6d0037b9a9aa95240b9791ae46f1c8574298dea6ecca9a8e",
+      "source": "brand/tavi-celebrate.webp"
+    },
+    {
+      "path": "assets/brand/tavi-checklist.webp",
+      "sha256": "edd0525c6a9369f950c3cadc7acfa3a9e41089e31772586d3c02c6431fb11cbd",
+      "source": "brand/tavi-checklist.webp"
+    },
+    {
+      "path": "assets/brand/tavi-cursor.webp",
+      "sha256": "f3f0f73ad9bce238c0c48bb3991e28cb8f908c2321de0b0404f2c12cbf2ca267",
+      "source": "brand/tavi-cursor.webp"
+    },
+    {
+      "path": "assets/brand/tavi-listen.webp",
+      "sha256": "65bb38da801db93482f28e89ba327e93cd0be7f98a6d9dcfa7c419aa7d897bc0",
+      "source": "brand/tavi-listen.webp"
+    },
+    {
+      "path": "assets/brand/tavi-wave.webp",
+      "sha256": "d734cc0ca0cc7f8f0d65013c305fd4ee59e2c49649cfa6404867fba79b8157d6",
+      "source": "brand/tavi-wave.webp"
+    },
+    {
+      "path": "assets/brand/tavi.webp",
+      "sha256": "951ec4121b2ba5b4434e103afe7b5c1f1ddeb7247d6028be2c7da269404cc660",
+      "source": "brand/tavi.webp"
+    },
+    {
+      "path": "assets/fonts/instrument-serif-italic.ttf",
+      "sha256": "fecf4861d5202405b8bd45c683858b6870642a026784fe0dbf88ff55dedee8a0",
+      "source": "fonts/instrument-serif-italic.ttf"
+    },
+    {
+      "path": "assets/fonts/instrumentserif-OFL.txt",
+      "sha256": "129ed7618959716959f2941fdd5b49e0ad6e6c1d78726761786a00253d865521",
+      "source": "fonts/instrumentserif-OFL.txt"
+    },
+    {
+      "path": "assets/fonts/manrope-bold.ttf",
+      "sha256": "b9584e099e0e7f1e1e914c3037aabb9010c50346a3ce8df5eeeeecc0563044d8",
+      "source": "fonts/manrope-bold.ttf"
+    },
+    {
+      "path": "assets/fonts/manrope-OFL.txt",
+      "sha256": "e01b637272e0cbdfb240184dd98ea5cc671556d9894dae2668d92ab2c906787c",
+      "source": "fonts/manrope-OFL.txt"
+    },
+    {
+      "path": "assets/fonts/manrope-regular.ttf",
+      "sha256": "a13d9b41b0a471ce58f0e46d377fa3cc76615e4632c3b15eb397caadf7a13f0a",
+      "source": "fonts/manrope-regular.ttf"
+    },
+    {
+      "path": "assets/fonts/manrope-semibold.ttf",
+      "sha256": "6bad1a774228464cc88b8b0271555b266f7a3c64a7bedf15e165fdab4f6ac0ce",
+      "source": "fonts/manrope-semibold.ttf"
+    },
+    {
+      "path": "assets/mac/icon.icns",
+      "sha256": "5d74bdce44c452ef50dfd5ef04cfbfe7243416eb6b91f8e58cc54ac575a7350d",
+      "source": "brand/mark.png",
+      "derived": true
+    },
+    {
+      "path": "assets/truveil.ico",
+      "sha256": "c7bff65e04059bab68a224b478f7ca126fe56b2708178764228aababaebae4b1",
+      "source": "brand/mark.png",
+      "derived": true
+    },
+    {
+      "path": "src/renderer/assets/favicon.png",
+      "sha256": "d74ced9b42722e85b80919ae15c3138f63a3241369856afb97a14f1541a5df82",
+      "source": "brand/favicon.png"
+    },
+    {
+      "path": "src/renderer/assets/instrument-serif-italic.ttf",
+      "sha256": "fecf4861d5202405b8bd45c683858b6870642a026784fe0dbf88ff55dedee8a0",
+      "source": "fonts/instrument-serif-italic.ttf"
+    },
+    {
+      "path": "src/renderer/assets/instrumentserif-OFL.txt",
+      "sha256": "129ed7618959716959f2941fdd5b49e0ad6e6c1d78726761786a00253d865521",
+      "source": "fonts/instrumentserif-OFL.txt"
+    },
+    {
+      "path": "src/renderer/assets/manrope-bold.ttf",
+      "sha256": "b9584e099e0e7f1e1e914c3037aabb9010c50346a3ce8df5eeeeecc0563044d8",
+      "source": "fonts/manrope-bold.ttf"
+    },
+    {
+      "path": "src/renderer/assets/manrope-OFL.txt",
+      "sha256": "e01b637272e0cbdfb240184dd98ea5cc671556d9894dae2668d92ab2c906787c",
+      "source": "fonts/manrope-OFL.txt"
+    },
+    {
+      "path": "src/renderer/assets/manrope-regular.ttf",
+      "sha256": "a13d9b41b0a471ce58f0e46d377fa3cc76615e4632c3b15eb397caadf7a13f0a",
+      "source": "fonts/manrope-regular.ttf"
+    },
+    {
+      "path": "src/renderer/assets/manrope-semibold.ttf",
+      "sha256": "6bad1a774228464cc88b8b0271555b266f7a3c64a7bedf15e165fdab4f6ac0ce",
+      "source": "fonts/manrope-semibold.ttf"
+    },
+    {
+      "path": "src/renderer/assets/mark.png",
+      "sha256": "67dc29ef1d8c3af1d6beae66cc05f8440fb966f6f7d396be7b00d97451c8f16f",
+      "source": "brand/mark.png"
+    },
+    {
+      "path": "src/renderer/assets/tavi-celebrate.webp",
+      "sha256": "e7d59895673e963a6d0037b9a9aa95240b9791ae46f1c8574298dea6ecca9a8e",
+      "source": "brand/tavi-celebrate.webp"
+    },
+    {
+      "path": "src/renderer/assets/tavi-checklist.webp",
+      "sha256": "edd0525c6a9369f950c3cadc7acfa3a9e41089e31772586d3c02c6431fb11cbd",
+      "source": "brand/tavi-checklist.webp"
+    },
+    {
+      "path": "src/renderer/assets/tavi-cursor.webp",
+      "sha256": "f3f0f73ad9bce238c0c48bb3991e28cb8f908c2321de0b0404f2c12cbf2ca267",
+      "source": "brand/tavi-cursor.webp"
+    },
+    {
+      "path": "src/renderer/assets/tavi-listen.webp",
+      "sha256": "65bb38da801db93482f28e89ba327e93cd0be7f98a6d9dcfa7c419aa7d897bc0",
+      "source": "brand/tavi-listen.webp"
+    },
+    {
+      "path": "src/renderer/assets/tavi-wave.webp",
+      "sha256": "d734cc0ca0cc7f8f0d65013c305fd4ee59e2c49649cfa6404867fba79b8157d6",
+      "source": "brand/tavi-wave.webp"
+    },
+    {
+      "path": "src/renderer/assets/tavi.webp",
+      "sha256": "951ec4121b2ba5b4434e103afe7b5c1f1ddeb7247d6028be2c7da269404cc660",
+      "source": "brand/tavi.webp"
+    }
+  ]
+}

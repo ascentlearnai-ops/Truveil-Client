@@ -4,263 +4,283 @@
   <meta charset="UTF-8">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' wss://api.deepgram.com; base-uri 'none'; form-action 'none'; frame-src 'none'; object-src 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
   <title>Truveil Secure</title>
-  <link rel="icon" type="image/png" href="../../assets/brand/truveil-lock-transparent.png">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <a class="skip-link" href="#setup-screen">Skip to content</a>
-  <!-- Ambient orbs -->
-  <div class="orb orb-1"></div>
-  <div class="orb orb-2"></div>
-  <div class="orb orb-3"></div>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <!-- Preserve legacy decorative IDs without rendering their effects. -->
+  <div hidden aria-hidden="true"><span id="noise"></span><span id="sg"></span></div>
 
-  <!-- Noise overlay -->
-  <svg class="noise-overlay" xmlns="http://www.w3.org/2000/svg">
-    <filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch"/></filter>
-    <rect width="100%" height="100%" filter="url(#noise)"/>
-  </svg>
-
-  <!-- Title bar -->
-  <div class="titlebar">
+  <header class="titlebar">
     <div class="tb-left">
-      <span class="app-brand"><span class="app-glyph">T</span><strong>Truveil Secure</strong></span>
-      <span class="tb-beta-badge" title="Truveil Secure is in public beta" aria-label="Truveil Secure is in public beta">Beta</span>
-    </div>
-    <div class="tb-right">
-      <span class="status-pill" id="statusPill">
-        <span class="status-dot" id="statusDot"></span>
-        <span id="statusText">Not started</span>
+      <span class="app-brand">
+        <img src="assets/mark.png" width="32" height="32" alt="">
+        <strong>truveil <span>Secure</span></strong>
       </span>
+      <span class="tb-beta-badge" title="Truveil Secure is in public beta">Beta</span>
     </div>
-  </div>
+    <span class="status-pill" id="statusPill" role="status" aria-atomic="true">
+      <span class="status-dot" id="statusDot" aria-hidden="true"></span>
+      <span id="statusText">Not started</span>
+    </span>
+  </header>
 
-  <!-- Consent / Setup screen -->
-  <div class="screen active" id="setup-screen">
-    <div class="glass-card">
-      <div class="icon-wrap">
-        <div class="icon-rings">
-          <span class="ring r1"></span>
-          <span class="ring r2"></span>
-          <span class="ring r3"></span>
-        </div>
-        <span class="brand-lock" aria-hidden="true">T</span>
-        <svg class="shield legacy-shield" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-          <defs>
-            <linearGradient id="sg" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stop-color="#22c55e"/>
-              <stop offset="100%" stop-color="#60a5fa"/>
-            </linearGradient>
-          </defs>
-          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="url(#sg)"/>
-          <polyline points="9 12 11 14 15 10" stroke="#22c55e" stroke-width="1.8"/>
-        </svg>
-      </div>
-      <div class="trust-badge"><span class="dot"></span>INTERVIEW CHECK-IN</div>
-      <h1>Enter your <span class="gradient-text">session code</span></h1>
-      <p class="sub">Join the verified interview room. Keep Truveil Secure open while you take your call.</p>
-
-      <div class="instruction-carousel" aria-label="How to use Truveil Secure">
-        <div class="instruction-viewport" id="instructionViewport">
-          <div class="instruction-track" id="instructionTrack">
-            <article class="instruction-card" aria-label="Step 1 of 4">
-              <span>01</span>
-              <strong>Open your invite</strong>
-              <p>Use the link from your recruiter, or paste the TRV code they gave you.</p>
-            </article>
-            <article class="instruction-card" aria-label="Step 2 of 4">
-              <span>02</span>
-              <strong>Review and consent</strong>
-              <p>Confirm the session notice before anything starts. Truveil explains what is used.</p>
-            </article>
-            <article class="instruction-card" aria-label="Step 3 of 4">
-              <span>03</span>
-              <strong>Allow microphone</strong>
-              <p>Grant mic access for live transcription. You will see a simple voice health meter.</p>
-            </article>
-            <article class="instruction-card" aria-label="Step 4 of 4">
-              <span>04</span>
-              <strong>Keep this open</strong>
-              <p>Join Zoom, Meet, or Teams normally and leave Truveil Secure running until the interview ends.</p>
-            </article>
+  <main id="main-content" tabindex="-1">
+    <section class="screen active" id="setup-screen" aria-labelledby="setupTitle" tabindex="-1">
+      <header class="screen-heading">
+        <div>
+          <p class="eyebrow">Candidate check-in</p>
+          <h1 id="setupTitle">Join your interview</h1>
+          <div class="tavi-guidance">
+            <img class="tavi-mascot" src="assets/tavi-wave.webp" width="72" height="72" alt="">
+            <div class="tavi-bubble">
+              <span class="tavi-name">Tavi</span>
+              <p id="setupGuide" role="status" aria-live="polite" aria-atomic="true">Open your invitation or paste its code and server address. Add your name, then review the required permissions before you choose Join interview.</p>
+            </div>
           </div>
         </div>
-        <div class="instruction-controls">
-          <button class="instruction-nav" id="instructionPrev" type="button" aria-label="Previous instruction">Prev</button>
-          <div class="instruction-dots" id="instructionDots" aria-hidden="true"></div>
-          <button class="instruction-nav" id="instructionNext" type="button" aria-label="Next instruction">Next</button>
-        </div>
-      </div>
+      </header>
 
-      <div class="form">
-        <div class="field">
-          <label>SESSION CODE</label>
-          <input type="text" id="sessionCodeInput" placeholder="TRV-XXXXXX" autocomplete="off" maxlength="12" spellcheck="false">
-          <div class="field-hint">Your recruiter sent this to you - 10 characters starting with <code>TRV-</code></div>
-        </div>
-        <div class="field">
-          <label>YOUR NAME</label>
-          <input type="text" id="candidateNameInput" placeholder="e.g. Alex Chen" autocomplete="off">
-        </div>
-      </div>
+      <div class="setup-layout">
+        <div class="join-details">
+          <section class="form" aria-labelledby="detailsTitle">
+            <h2 class="section-title" id="detailsTitle"><span class="step-number" aria-hidden="true">1</span>Your details</h2>
+            <div class="field">
+              <label for="sessionCodeInput">Session code</label>
+              <input type="text" id="sessionCodeInput" placeholder="TRV-..." autocomplete="off" maxlength="24" spellcheck="false" autocapitalize="characters" aria-required="true" aria-describedby="sessionCodeHint">
+              <p class="field-hint" id="sessionCodeHint">Paste the complete code from your interviewer. No account needed.</p>
+            </div>
+            <div class="field">
+              <label for="demoRelayInput">Session server address</label>
+              <input type="url" id="demoRelayInput" placeholder="wss://your-session-server" autocomplete="off" spellcheck="false">
+              <p class="field-hint">Use the same server address as your interviewer, even on different Wi-Fi.</p>
+            </div>
+            <div class="field">
+              <label for="candidateNameInput">Your name</label>
+              <input type="text" id="candidateNameInput" placeholder="e.g. Alex Chen" autocomplete="name" aria-required="true">
+            </div>
+            <div class="field">
+              <label for="microphoneInput">Your microphone</label>
+              <select id="microphoneInput" aria-describedby="microphoneHint"><option value="">System default microphone</option></select>
+              <button class="btn" type="button" id="refreshMicrophonesBtn">Refresh microphones</button>
+              <p class="field-hint" id="microphoneHint">Choose your headset microphone, not Stereo Mix or a virtual call mix. Wear headphones so the interviewer's voice does not reach your microphone. Echo cancellation reduces leakage; it cannot identify speakers sharing one microphone.</p>
+            </div>
+          </section>
 
-      <div class="consent-items">
-        <div class="privacy-rail">
-          <span>Session-scoped</span>
-          <span>Local consent</span>
-          <span>Auto cleanup</span>
+          <section class="instruction-carousel" aria-label="How to use Truveil Secure" aria-roledescription="carousel">
+            <h2 class="section-title">Tavi's quick guide</h2>
+            <div class="instruction-viewport tavi-bubble" id="instructionViewport" role="group" aria-label="Interview instructions from Tavi" aria-describedby="instructionKeyboardHint">
+              <span class="sr-only" id="instructionKeyboardHint">Use the left and right arrow keys to change instructions.</span>
+              <div class="instruction-track" id="instructionTrack">
+                <article class="instruction-card" aria-label="Step 1 of 4" aria-roledescription="slide">
+                  <span class="instruction-step">01 / 04</span>
+                  <h3 class="sr-only">Open your invite</h3>
+                  <p>Paste the session code and server address from your interviewer.</p>
+                </article>
+                <article class="instruction-card" aria-label="Step 2 of 4" aria-roledescription="slide" aria-hidden="true">
+                  <span class="instruction-step">02 / 04</span>
+                  <h3 class="sr-only">Review and consent</h3>
+                  <p>Read the notice, then choose which permissions to grant.</p>
+                </article>
+                <article class="instruction-card" aria-label="Step 3 of 4" aria-roledescription="slide" aria-hidden="true">
+                  <span class="instruction-step">03 / 04</span>
+                  <h3 class="sr-only">Allow microphone</h3>
+                  <p>When prompted, allow microphone access for the session check.</p>
+                </article>
+                <article class="instruction-card" aria-label="Step 4 of 4" aria-roledescription="slide" aria-hidden="true">
+                  <span class="instruction-step">04 / 04</span>
+                  <h3 class="sr-only">Keep this open</h3>
+                  <p>Keep Secure open and use your normal calling app.</p>
+                </article>
+              </div>
+            </div>
+            <p class="sr-only" id="instructionAnnouncement" role="status" aria-live="polite" aria-atomic="true"></p>
+            <div class="instruction-controls">
+              <button class="instruction-nav" id="instructionPrev" type="button" aria-label="Previous instruction" title="Previous instruction" aria-controls="instructionTrack">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg>
+              </button>
+              <div class="instruction-dots" id="instructionDots" role="group" aria-label="Choose an instruction"></div>
+              <button class="instruction-nav" id="instructionNext" type="button" aria-label="Next instruction" title="Next instruction" aria-controls="instructionTrack">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg>
+              </button>
+            </div>
+          </section>
         </div>
-        <div class="ci">
-          <div class="ci-icon">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+
+        <section class="consent-panel" aria-labelledby="consentTitle">
+          <h2 class="section-title" id="consentTitle"><span class="step-number" aria-hidden="true">2</span>Review and consent</h2>
+          <p class="section-description">What is shared during this interview</p>
+          <div class="consent-items">
+            <div class="ci">
+              <svg class="ci-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3m-4 0h8"/></svg>
+              <div class="ci-text"><h3>Microphone transcript</h3><p>Only your selected microphone is transcribed, not system or call audio. Other voices audible to that microphone may still be captured. Continues while you use other calling apps. End the session or close Truveil Secure to stop. Raw audio is not kept in the report.</p></div>
+            </div>
+            <div class="ci">
+              <svg class="ci-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8m-4-4v4"/></svg>
+              <div class="ci-text"><h3 id="activityNoticeTitle">Optional browser sharing</h3><p id="activityNoticeText">Only the browser window you explicitly connect is shared. Domain names and tab changes are visible, never page contents, titles, or full URLs. Other windows and apps are not monitored.</p></div>
+            </div>
+            <div class="ci">
+              <svg class="ci-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V6a4 4 0 0 1 8 0v4m-4 5v2"/></svg>
+              <div class="ci-text"><h3>No file access</h3><p>Truveil Secure never reads your files, clipboard, or screen.</p></div>
+            </div>
           </div>
-          <div class="ci-text"><strong>Microphone transcript</strong><span>Used during this session for live transcript text. Raw audio is not kept in the report.</span></div>
-        </div>
-        <div class="ci">
-          <div class="ci-icon">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
+          <div class="consent-disclosure" id="privacyNotice">
+            <h3>What this does not do</h3>
+            <p>No camera. No screen recording. No file or clipboard access. No automatic hiring decision.</p>
           </div>
-          <div class="ci-text"><strong>Foreground activity</strong><span>The interviewer may receive the active app name, window title, browser host or URL when Windows exposes it, and restricted-target events.</span></div>
-        </div>
-        <div class="ci">
-          <div class="ci-icon">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          <label class="consent-check" for="sessionConsentInput">
+            <input type="checkbox" id="sessionConsentInput" aria-required="true" aria-describedby="privacyNotice">
+            <span>I consent to this session verification and understand the information above may be shared with the interviewer.</span>
+          </label>
+          <label class="consent-check" for="externalReviewConsentInput">
+            <input type="checkbox" id="externalReviewConsentInput">
+            <span>Optional: allow selected transcripts from this interview to be sent to Pangram and OpenRouter for experimental AI-text review. Providers may retain submitted text under their policies. Results are advisory, not proof of AI use. <a href="https://www.pangram.com/data-privacy" target="_blank" rel="noreferrer">Pangram privacy</a> and <a href="https://openrouter.ai/privacy" target="_blank" rel="noreferrer">OpenRouter privacy</a>.</span>
+          </label>
+          <div id="browserConsentOptions">
+            <label class="consent-check" for="tabObserveConsentInput"><input type="checkbox" id="tabObserveConsentInput"><span>Optional: share tab domain names and tab changes from one browser window I connect using the Truveil extension.</span></label>
+            <label class="consent-check" for="tabCloseConsentInput"><input type="checkbox" id="tabCloseConsentInput" disabled><span>Also allow my interviewer to close individual shared tabs manually. Unsaved work in those tabs may be lost. I can stop sharing at any time.</span></label>
           </div>
-          <div class="ci-text"><strong>No file access</strong><span>Truveil Secure never reads your files, clipboard, or screen.</span></div>
-        </div>
-        <div class="consent-disclosure">
-          <strong>What this does not do</strong>
-          <span>No camera. No screen recording. No file or clipboard access. No automatic hiring decision.</span>
-        </div>
-        <label class="consent-check">
-          <input type="checkbox" id="sessionConsentInput">
-          <span>I consent to this session verification and understand the information above may be shared with the interviewer.</span>
-        </label>
+          <button class="btn btn-primary" type="button" id="startBtn">Join interview</button>
+          <button class="btn" type="button" id="cancelJoinBtn" hidden>Cancel joining</button>
+          <p class="fine-print">You can end the session when your interview is complete.</p>
+        </section>
       </div>
+    </section>
 
-      <button class="btn btn-primary lg" id="startBtn">
-        <span class="btn-label">Start Secure Session</span>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" x2="19" y1="12" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-      </button>
-      <p class="fine-print">You can end the session when your interview is complete.</p>
-    </div>
-  </div>
+    <section class="screen" id="active-screen" aria-labelledby="activeTitle" tabindex="-1">
+      <header class="screen-heading active-heading">
+        <div>
+          <p class="eyebrow">Your interview</p>
+          <h1 id="activeTitle">Ready for the interviewer</h1>
+          <p class="sub" id="activeSubtitle">Your microphone preflight passed. The interview has not started yet.</p>
+          <div class="tavi-guidance">
+            <img class="tavi-mascot" src="assets/tavi-listen.webp" width="72" height="72" alt="">
+            <div class="tavi-bubble">
+              <span class="tavi-name">Tavi</span>
+              <p id="sessionGuide" role="status" aria-live="polite" aria-atomic="true">Your microphone is open for preflight; transcription hasn't started. Wait for your interviewer.</p>
+            </div>
+          </div>
+          <button class="btn" type="button" id="withdrawProviderConsentBtn" hidden>Stop external text review</button>
+          <p class="fine-print" id="externalReviewState" role="status"></p>
+        </div>
+      </header>
 
-  <!-- Active session screen -->
-  <div class="screen" id="active-screen">
-    <div class="glass-card session-card">
-      <div class="session-header">
-        <div class="sh-left">
-          <div class="pulse-orb"></div>
-          <div>
-            <div class="sh-label">SESSION ACTIVE</div>
-            <div class="sh-name" id="displayName">-</div>
+      <div class="session-content">
+        <section class="session-header" aria-label="Session details">
+          <div><span class="stat-label">Candidate</span><strong class="sh-name" id="displayName">-</strong></div>
+          <div><span class="stat-label">Session code</span><strong class="mono" id="displayCode">TRV-XXXXXX</strong></div>
+          <div><span class="stat-label">Elapsed</span><strong class="mono" id="elapsed">00:00:00</strong></div>
+          <div><span class="stat-label">Connection</span><strong id="connectionState" role="status">Waiting for interviewer</strong></div>
+        </section>
+
+        <section class="captions-section" aria-labelledby="captionsTitle">
+          <div class="captions-heading">
+            <h2 class="section-title" id="captionsTitle">Live captions</h2>
+            <span class="caption-state" id="captionState">Waiting for the interview</span>
+          </div>
+          <div class="caption-scroll" id="captionScroll" tabindex="0" aria-label="Recent interview captions">
+            <div id="captionHistory" role="log" aria-label="Confirmed speech" aria-relevant="additions"></div>
+            <p class="caption-draft" id="captionDraft" aria-label="Revisable live caption"></p>
+            <p class="caption-empty" id="captionEmpty">Your words will appear here when the interview starts.</p>
+          </div>
+        </section>
+
+        <div class="health-layout">
+          <section class="audio-panel" aria-labelledby="voiceTitle">
+            <div class="audio-panel-head">
+              <div>
+                <h2 class="section-title" id="voiceTitle">Voice health</h2>
+                <p class="audio-state" id="audioState">Starting</p>
+              </div>
+              <span class="audio-chunks"><span id="audioChunkCount">0</span> segments</span>
+            </div>
+            <div class="mic-waveform" id="micWaveform" aria-hidden="true"></div>
+            <div class="mic-level-row">
+              <span>Mic level</span>
+              <div class="mic-level" aria-hidden="true"><i id="micLevelFill"></i></div>
+              <strong id="micLevelLabel">0%</strong>
+            </div>
+            <p class="audio-status" id="uploadStatus">Transcript relay starting</p>
+            <button class="btn" type="button" id="retrySpeechBtn" hidden>Retry live captions</button>
+          </section>
+
+          <section class="session-privacy" aria-labelledby="sessionPrivacyTitle">
+            <h2 class="section-title" id="sessionPrivacyTitle">Your privacy, in view</h2>
+            <dl class="privacy-facts">
+              <div><dt>Microphone transcript</dt><dd>Live text for this session</dd></div>
+              <div><dt id="activityFactTitle">Browser sharing</dt><dd id="activityFactValue">Only the window you connect, with permission</dd></div>
+              <div><dt>Never collected</dt><dd>Camera, screen, files or clipboard</dd></div>
+              <div><dt>Review</dt><dd>No automatic hiring decision</dd></div>
+            </dl>
+          </section>
+        </div>
+
+        <section class="browser-panel" id="browserPanel" aria-labelledby="browserTitle" hidden>
+          <h2 class="section-title" id="browserTitle">Your shared browser window</h2>
+          <p id="browserState" role="status">Not connected</p>
+          <div class="tavi-guidance">
+            <img class="tavi-mascot" src="assets/tavi-wave.webp" width="72" height="72" alt="">
+            <div class="tavi-bubble">
+              <span class="tavi-name">Tavi</span>
+              <p id="browserGuide" role="status" aria-live="polite" aria-atomic="true">Browser sharing is optional. Only a window you explicitly pair can be shared.</p>
+            </div>
+          </div>
+          <div class="browser-actions">
+            <button class="btn" type="button" id="openExtensionBtn">Open extension folder</button>
+            <button class="btn" type="button" id="pairBrowserBtn" disabled>Connect browser</button>
+            <button class="btn btn-danger" type="button" id="stopBrowserBtn" disabled>Stop sharing</button>
+          </div>
+          <div id="browserPairing" hidden>
+            <label for="browserPairingCode">Private, one-use pairing code</label>
+            <input id="browserPairingCode" type="text" readonly autocomplete="off" spellcheck="false">
+            <button class="btn" id="copyPairingBtn" type="button">Copy pairing code</button>
+          </div>
+        </section>
+
+        <section class="event-section" aria-labelledby="eventsTitle">
+          <h2 class="section-title" id="eventsTitle">Session activity</h2>
+          <div class="flag-feed" id="flagFeed" role="log" aria-labelledby="eventsTitle" aria-relevant="additions">
+            <p class="ff-empty">No session events to show.</p>
+          </div>
+        </section>
+        <div class="policy-summary" id="policySummary" hidden>
+          <h2 class="section-title">Session policy</h2>
+          <p id="blockedSitesText">Loading interview policy...</p>
+        </div>
+        <div class="blocking-banner" id="blockingBanner" role="alert" hidden>
+          <strong>Restricted activity observed</strong>
+          <span id="blockingDetail">Return to your interview call.</span>
+        </div>
+        <footer class="session-actions">
+          <p>Keep Truveil Secure open while you take your call.</p>
+          <button class="btn btn-danger" type="button" id="endBtn">End Session</button>
+        </footer>
+      </div>
+    </section>
+
+    <section class="screen" id="ended-screen" aria-labelledby="endedTitle" tabindex="-1">
+      <div class="ended-content">
+        <p class="eyebrow" id="endedBadge">SESSION ENDED</p>
+        <h1 id="endedTitle">Thank you</h1>
+        <div class="tavi-guidance">
+          <img class="tavi-mascot" src="assets/tavi-listen.webp" width="72" height="72" alt="">
+          <div class="tavi-bubble">
+            <span class="tavi-name">Tavi</span>
+            <p id="endedDescription" role="status" aria-live="polite" aria-atomic="true">Your microphone and local monitoring have stopped. You can close this window now.</p>
           </div>
         </div>
-        <div class="sh-right">
-          <div class="sh-code mono" id="displayCode">TRV-XXXXXX</div>
+        <div class="ended-actions">
+          <button class="btn btn-primary" type="button" id="quitBtn">Close Truveil Secure</button>
         </div>
       </div>
+    </section>
+  </main>
 
-      <div class="shield-area">
-        <span class="ring-big r1"></span>
-        <span class="ring-big r2"></span>
-        <span class="ring-big r3"></span>
-        <div class="shield-big">
-          <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="url(#sg)"/>
-            <polyline points="9 12 11 14 15 10" stroke="#22c55e" stroke-width="1.8"/>
-          </svg>
-        </div>
-      </div>
-
-      <main class="active-main">
-      <section class="active-copy">
-      <h2 id="activeTitle">Ready for the interviewer</h2>
-      <p class="sub" id="activeSubtitle">Your microphone preflight passed. The interview has not started yet.</p>
-
-      <div class="stats-row">
-        <div class="stat">
-          <div class="stat-label">ELAPSED</div>
-          <div class="stat-val mono" id="elapsed">00:00:00</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">STATUS</div>
-          <div class="stat-val"><span class="s-dot"></span> Monitoring</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">SESSION</div>
-          <div class="stat-val" id="connectionState">Secure</div>
-        </div>
-      </div>
-
-      </section>
-
-      <section class="audio-panel">
-        <div class="audio-panel-head">
-          <div>
-            <div class="stat-label">VOICE CHECK</div>
-            <div class="audio-state"><span class="s-dot"></span><span id="audioState">Starting</span></div>
-          </div>
-          <div class="audio-chunks"><span id="audioChunkCount">0</span> updates</div>
-        </div>
-        <div class="mic-waveform" id="micWaveform" aria-hidden="true"></div>
-        <div class="mic-level-row">
-          <span>Mic level</span>
-          <div class="mic-level"><i id="micLevelFill"></i></div>
-          <strong id="micLevelLabel">0%</strong>
-        </div>
-        <div class="audio-status ok" id="uploadStatus">Transcript relay starting</div>
-      </section>
-
-      <div class="session-cockpit">
-        <div><span>Mic transcript</span><strong>Live text only</strong></div>
-        <div><span>Privacy boundary</span><strong>No camera or screen</strong></div>
-        <div><span>Review use</span><strong>Human-owned summary</strong></div>
-      </div>
-
-      <div class="flag-feed" id="flagFeed">
-        <div class="ff-empty">No events recorded - You're doing everything right</div>
-      </div>
-
-      <div class="policy-summary" id="policySummary" hidden>
-        <strong>Blocked websites</strong>
-        <span id="blockedSitesText">Loading interview policy...</span>
-      </div>
-      </main>
-
-      <div class="blocking-banner" id="blockingBanner" hidden>
-        <strong>Restricted site closed</strong>
-        <span id="blockingDetail">Return to your interview call.</span>
-      </div>
-
-      <div class="session-actions">
-        <button class="btn btn-danger" id="endBtn">End Session</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Ended screen -->
-  <div class="screen" id="ended-screen">
-    <div class="glass-card ended-card">
-      <div class="check-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-          <polyline points="22 4 12 14.01 9 11.01"/>
-        </svg>
-      </div>
-      <div class="trust-badge ok"><span class="dot"></span>SESSION COMPLETE</div>
-      <h2>Thank you</h2>
-      <p class="sub">Your secure session has ended. Your recruiter has the session summary. You can close this window now.</p>
-      <div class="ended-actions">
-        <button class="btn btn-primary" id="quitBtn">Close Truveil Secure</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Toast -->
-  <div class="toast" id="toast"></div>
-
+  <div class="toast" id="toast" role="alert" aria-atomic="true"></div>
+  <script src="../session/presentation.js"></script>
   <script src="session.js"></script>
 </body>
 </html>

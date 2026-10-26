@@ -3,7 +3,6 @@ const HALLUCINATION_PATTERNS = [
   /^(thank you for watching|thanks for watching|please subscribe)[\s.!?]*$/i,
   /^(subtitles|captions) by\b/i,
   /\bamara\.org\b/i,
-  /^(you|yeah|okay|ok|right|so)[\s,.!?]*\1?[\s,.!?]*$/i,
   /^(the\s+){3,}/i
 ];
 
@@ -32,14 +31,14 @@ function assessTranscript({
   source = ''
 } = {}) {
   const normalized = normalizeTranscript(text);
-  if (!normalized || normalized.length < 3) return { accepted: false, reason: 'empty', text: '' };
+  if (!normalized) return { accepted: false, reason: 'empty', text: '' };
   if (HALLUCINATION_PATTERNS.some(pattern => pattern.test(normalized))) {
     return { accepted: false, reason: 'known-hallucination-pattern', text: normalized };
   }
 
   const words = wordCount(normalized);
-  const numericConfidence = Number(confidence);
-  const hasConfidence = Number.isFinite(numericConfidence) && numericConfidence > 0;
+  const numericConfidence = confidence;
+  const hasConfidence = typeof numericConfidence === 'number' && Number.isFinite(numericConfidence) && numericConfidence >= 0 && numericConfidence <= 1;
   const numericRms = Number(rms);
   const numericPeak = Number(peak);
   const hasAudioMetrics = Number.isFinite(numericRms) || Number.isFinite(numericPeak);
@@ -48,16 +47,16 @@ function assessTranscript({
   if (!interim && !heardSpeech) {
     return { accepted: false, reason: 'no-speech-energy', text: normalized };
   }
-  if (!interim && hasConfidence && numericConfidence < MIN_FINAL_CONFIDENCE) {
-    return { accepted: false, reason: 'low-confidence', text: normalized };
-  }
-  if (!interim && words === 1 && normalized.length < 5 && hasConfidence && numericConfidence < 0.72) {
-    return { accepted: false, reason: 'weak-single-word', text: normalized };
-  }
+  // Uncertain speech stays visible, but its metadata prevents risk scoring.
+  const qualityReason = !hasConfidence ? 'missing-confidence'
+    : !interim && numericConfidence < MIN_FINAL_CONFIDENCE ? 'low-confidence'
+    : !interim && words === 1 && normalized.length < 5 && numericConfidence < 0.72 ? 'weak-single-word'
+    : null;
 
   return {
     accepted: true,
-    reason: '',
+    reason: qualityReason || '',
+    qualityReason,
     text: normalized,
     confidence: hasConfidence ? numericConfidence : undefined,
     words,

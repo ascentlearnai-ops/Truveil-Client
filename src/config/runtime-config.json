@@ -1,4 +1,5 @@
 {
+  "demoRelayUrl": "wss://directly-honors-unlike-sets.trycloudflare.com/demo",
   "apiBaseUrl": "http://localhost:3001",
   "supabaseUrl": "https://kcsrqobajprwpsyjiram.supabase.co",
   "supabaseAnonKey": "sb_publishable_db4E1_8_hQX1EsC-WS9AtA_znhWqTtO"

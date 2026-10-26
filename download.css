@@ -1,0 +1,20 @@
+.download-layout .form-side { gap: 14px; }
+.download-layout .form-side > p { margin-bottom: 0; }
+.download-layout .form-side h3 { margin-top: 10px; }
+.download-layout .form-side a { overflow-wrap: anywhere; }
+.download-layout .form-side .btn { text-align: center; }
+.download-platform { display: flex; flex-wrap: wrap; gap: 10px; padding: 0; margin: 4px 0; border: 0; min-width: 0; }
+.download-platform legend { margin-bottom: 10px; font-size: 13px; font-weight: 600; }
+.download-platform label { display: flex; align-items: center; gap: 9px; min-height: 44px; padding: 10px 16px; border: 1px solid #dce7ed; border-radius: 6px; cursor: pointer; }
+.download-platform label:has(input:checked) { background: #edf7fd; border-color: #266585; }
+.download-platform label:focus-within { outline: 2px solid #266585; outline-offset: 3px; }
+.download-platform input { width: 16px; height: 16px; margin: 0; accent-color: #266585; }
+.download-panel { display: grid; gap: 14px; padding: 16px 0; border-bottom: 1px solid #dce7ed; }
+.download-panel[hidden], .download-panel [hidden] { display: none !important; }
+.download-panel .btn { justify-self: start; }
+.download-architecture label { flex: 1 1 140px; }
+@media (max-width: 420px) { .download-panel .btn { justify-self: stretch; } }
+@media (max-width: 760px) {
+  .download-layout .form-side { order: -1; }
+  .download-layout .form-story { padding: 32px; }
+}

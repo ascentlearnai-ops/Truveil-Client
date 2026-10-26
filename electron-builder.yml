@@ -11,13 +11,23 @@ files:
   - preload.js
   - package.json
   - assets/**/*
-  - src/config/runtime-config.json
-  - src/audio/**/*
-  - src/lockdown/**/*
-  - src/renderer/**/*
-  - src/transcription/**/*
+  - src/**/*
+  - browser-extension/protocol.js
+extraResources:
+  - from: browser-extension
+    to: browser-extension
+    filter:
+      - "**/*"
 mac:
+  icon: assets/mac/icon.icns
   category: public.app-category.business
+  minimumSystemVersion: '12.0'
+  hardenedRuntime: true
+  entitlements: assets/entitlements.mac.plist
+  entitlementsInherit: assets/entitlements.mac.plist
+  artifactName: TruveilSecure-${version}-mac-${arch}.${ext}
+  extendInfo:
+    NSMicrophoneUsageDescription: Truveil Secure transcribes your microphone only after you consent and join an interview, including while you use a calling app. End the session to stop capture.
   target:
     - dmg
 win:

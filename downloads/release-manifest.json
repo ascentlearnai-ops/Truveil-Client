@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "app": "truveil-secure",
+  "version": "1.0.0",
+  "builtAt": "2026-10-26T03:54:15.959Z",
+  "installer": "TruveilSecure-Setup-1.0.0.exe",
+  "installerSha256": "1ebc6e65b5306239e9d40bca5a90e9e51c7dc7e11ee446b4641fa58ed82c50ab",
+  "archiveSha256": "f262a543f7d526a0befbf67bfff21aa8e71af0c4ee111c1dfb0c7233315613c7",
+  "sourceHash": "37195a642ad285a6e07ec5320620e1e7eba679020a6c0467e3669c5906c893b4"
+}

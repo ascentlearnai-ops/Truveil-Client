@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+require('./release-artifact').verifyRelease();
 
 const repoRoot = path.join(__dirname, '..');
 const installerName = 'TruveilSecure-Setup-1.0.0.exe';
